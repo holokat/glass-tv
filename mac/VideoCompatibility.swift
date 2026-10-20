@@ -128,7 +128,7 @@ enum VideoCompatibility {
             return direct
         }
 
-        guard let ffmpegURL = MediaToolLocator.executable(named: "ffmpeg") else { throw VideoCompatibilityError.ffmpegUnavailable }
+        guard MediaToolLocator.executable(named: "ffmpeg") != nil else { throw VideoCompatibilityError.ffmpegUnavailable }
         let cache = try cacheURL(for: source)
         if FileManager.default.fileExists(atPath: cache.path) {
             let cacheUse = await ConversionCache.shared.acquireUse(for: cache)

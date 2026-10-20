@@ -35,3 +35,7 @@ The `android/` directory contains source and resources required for review. No A
 No local user libraries, pairing state, credentials, keys, build caches, device artifacts, or absolute local filesystem paths are included. The protocol supports local-network communication with a compatible receiver.
 
 See `CENTRAL_ICONS.md` for the icon prerequisite and `PROTOCOL.md` for the communication protocol.
+
+## Website
+
+The static release website is in `website/`. Populate its licensed UI icons using `website/scripts/prepare-licensed-icons.sh` as described in `website/STYLEGUIDE.md`, then serve the folder locally. Only `index.html`, `styles.css`, `app.js`, and `assets/` belong in the production static upload. The public source excludes loose Central icon exports.
