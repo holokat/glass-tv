@@ -1,0 +1,156 @@
+[
+  {
+    "id": "youtube",
+    "title": "YouTube",
+    "packages": [
+      "com.google.android.youtube.tv"
+    ],
+    "minimalIcon": "brand_youtube",
+    "colorIcon": "brand_youtube_color",
+    "colorBackground": "#161616",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.google.android.youtube.tv&hl=en&gl=US"
+  },
+  {
+    "id": "disney_plus",
+    "title": "Disney+",
+    "packages": [
+      "com.disney.disneyplus"
+    ],
+    "minimalIcon": "brand_disney_plus",
+    "colorIcon": "brand_disney_plus_color",
+    "colorBackground": "#00484E",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.disney.disneyplus&hl=en&gl=US"
+  },
+  {
+    "id": "tubi",
+    "title": "Tubi",
+    "packages": [
+      "com.tubitv"
+    ],
+    "minimalIcon": "brand_tubi",
+    "colorIcon": "brand_tubi_color",
+    "colorBackground": "#4800B8",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.tubitv&hl=en&gl=US"
+  },
+  {
+    "id": "hbo_max",
+    "title": "HBO Max",
+    "packages": [
+      "com.wbd.stream"
+    ],
+    "minimalIcon": "brand_hbo_max",
+    "colorIcon": "brand_hbo_max_color",
+    "colorBackground": "#000000",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.wbd.stream&hl=en&gl=US"
+  },
+  {
+    "id": "paramount_plus",
+    "title": "Paramount+",
+    "packages": [
+      "com.cbs.ott"
+    ],
+    "minimalIcon": "brand_paramount_plus",
+    "colorIcon": "brand_paramount_plus_color",
+    "colorBackground": "#0064FF",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.cbs.ott&hl=en&gl=US"
+  },
+  {
+    "id": "peacock",
+    "title": "Peacock",
+    "packages": [
+      "com.peacocktv.peacockandroid"
+    ],
+    "minimalIcon": "brand_peacock",
+    "colorIcon": "brand_peacock_color",
+    "colorBackground": "#101010",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.peacocktv.peacockandroid&hl=en&gl=US"
+  },
+  {
+    "id": "pluto_tv",
+    "title": "Pluto TV",
+    "packages": [
+      "tv.pluto.android"
+    ],
+    "minimalIcon": "brand_pluto_tv",
+    "colorIcon": "brand_pluto_tv_color",
+    "colorBackground": "#FFED00",
+    "storeURL": "https://play.google.com/store/apps/details?id=tv.pluto.android&hl=en&gl=US"
+  },
+  {
+    "id": "apple_tv",
+    "title": "Apple TV",
+    "packages": [
+      "com.apple.atve.androidtv.appletv"
+    ],
+    "minimalIcon": "brand_apple_tv",
+    "colorIcon": "brand_apple_tv_color",
+    "colorBackground": "#000000",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.apple.atve.androidtv.appletv&hl=en&gl=US"
+  },
+  {
+    "id": "espn",
+    "title": "ESPN",
+    "packages": [
+      "com.espn.score_center"
+    ],
+    "minimalIcon": "brand_espn",
+    "colorIcon": "brand_espn_color",
+    "colorBackground": "#FFFFFF",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.espn.score_center&hl=en&gl=US"
+  },
+  {
+    "id": "crunchyroll",
+    "title": "Crunchyroll",
+    "packages": [
+      "com.crunchyroll.crunchyroid"
+    ],
+    "minimalIcon": "brand_crunchyroll",
+    "colorIcon": "brand_crunchyroll_color",
+    "colorBackground": "#F47521",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.crunchyroll.crunchyroid&hl=en&gl=US"
+  },
+  {
+    "id": "discovery_plus",
+    "title": "discovery+",
+    "packages": [
+      "com.discovery.discoveryplus.mobile"
+    ],
+    "minimalIcon": "brand_discovery_plus",
+    "colorIcon": "brand_discovery_plus_color",
+    "colorBackground": "#08134D",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.discovery.discoveryplus.mobile&hl=en&gl=US"
+  },
+  {
+    "id": "dazn",
+    "title": "DAZN",
+    "packages": [
+      "com.dazn"
+    ],
+    "minimalIcon": "brand_dazn",
+    "colorIcon": "brand_dazn_color",
+    "colorBackground": "#F7FF00",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.dazn&hl=en&gl=US"
+  },
+  {
+    "id": "starz",
+    "title": "STARZ",
+    "packages": [
+      "com.bydeluxe.d3.android.program.starz"
+    ],
+    "minimalIcon": "brand_starz",
+    "colorIcon": "brand_starz_color",
+    "colorBackground": "#000000",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.bydeluxe.d3.android.program.starz&hl=en&gl=US"
+  },
+  {
+    "id": "mgm_plus",
+    "title": "MGM+",
+    "packages": [
+      "com.epix.epix.now"
+    ],
+    "minimalIcon": "brand_mgm_plus",
+    "colorIcon": "brand_mgm_plus_color",
+    "colorBackground": "#000000",
+    "storeURL": "https://play.google.com/store/apps/details?id=com.epix.epix.now&hl=en&gl=US"
+  }
+]

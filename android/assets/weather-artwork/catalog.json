@@ -1,0 +1,964 @@
+{
+  "version": 1,
+  "destinations": [
+    {
+      "key": "tokyo",
+      "names": [
+        "tokyo",
+        "東京",
+        "東京都"
+      ],
+      "geoIDs": [
+        "geo-1850147"
+      ],
+      "latitude": 35.6895,
+      "longitude": 139.69171,
+      "radiusKM": 40,
+      "images": [
+        "tokyo-01.jpg",
+        "tokyo-02.jpg",
+        "tokyo-03.jpg",
+        "tokyo-04.jpg",
+        "tokyo-05.jpg"
+      ]
+    },
+    {
+      "key": "london",
+      "names": [
+        "london"
+      ],
+      "geoIDs": [
+        "geo-2643743"
+      ],
+      "latitude": 51.50853,
+      "longitude": -0.12574,
+      "radiusKM": 40,
+      "images": [
+        "london-01.jpg",
+        "london-02.jpg",
+        "london-03.jpg",
+        "london-04.jpg",
+        "london-05.jpg"
+      ]
+    },
+    {
+      "key": "paris",
+      "names": [
+        "paris"
+      ],
+      "geoIDs": [
+        "geo-2988507"
+      ],
+      "latitude": 48.85341,
+      "longitude": 2.3488,
+      "radiusKM": 35,
+      "images": [
+        "paris-01.jpg",
+        "paris-02.jpg",
+        "paris-03.jpg",
+        "paris-04.jpg",
+        "paris-05.jpg"
+      ]
+    },
+    {
+      "key": "new-york",
+      "names": [
+        "new york",
+        "new york city",
+        "nyc"
+      ],
+      "geoIDs": [
+        "geo-5128581"
+      ],
+      "latitude": 40.71427,
+      "longitude": -74.00597,
+      "radiusKM": 35,
+      "images": [
+        "new-york-01.jpg",
+        "new-york-02.jpg",
+        "new-york-03.jpg",
+        "new-york-04.jpg",
+        "new-york-05.jpg"
+      ]
+    },
+    {
+      "key": "singapore",
+      "names": [
+        "singapore",
+        "singapore island",
+        "新加坡"
+      ],
+      "geoIDs": [
+        "geo-1880251",
+        "geo-1880252",
+        "geo-1880249"
+      ],
+      "latitude": 1.36667,
+      "longitude": 103.8,
+      "radiusKM": 40,
+      "images": [
+        "singapore-01.jpg",
+        "singapore-02.jpg",
+        "singapore-03.jpg",
+        "singapore-04.jpg",
+        "singapore-05.jpg"
+      ]
+    },
+    {
+      "key": "reykjavik",
+      "names": [
+        "reykjavik"
+      ],
+      "geoIDs": [
+        "geo-3413829"
+      ],
+      "latitude": 64.13548,
+      "longitude": -21.89541,
+      "radiusKM": 35,
+      "images": [
+        "reykjavik-01.jpg",
+        "reykjavik-02.jpg",
+        "reykjavik-03.jpg",
+        "reykjavik-04.jpg",
+        "reykjavik-05.jpg"
+      ]
+    },
+    {
+      "key": "denver",
+      "names": [
+        "denver"
+      ],
+      "geoIDs": [
+        "geo-5419384"
+      ],
+      "latitude": 39.73915,
+      "longitude": -104.9847,
+      "radiusKM": 35,
+      "images": [
+        "denver-01.jpg",
+        "denver-02.jpg",
+        "denver-03.jpg",
+        "denver-04.jpg",
+        "denver-05.jpg"
+      ]
+    },
+    {
+      "key": "maui",
+      "names": [
+        "maui"
+      ],
+      "geoIDs": [
+        "geo-5850862"
+      ],
+      "latitude": 20.77024,
+      "longitude": -156.26816,
+      "radiusKM": 60,
+      "images": [
+        "maui-01.jpg",
+        "maui-02.jpg",
+        "maui-03.jpg",
+        "maui-04.jpg",
+        "maui-05.jpg"
+      ]
+    },
+    {
+      "key": "kyoto",
+      "names": [
+        "kyoto"
+      ],
+      "geoIDs": [
+        "geo-1857910"
+      ],
+      "latitude": 35.02107,
+      "longitude": 135.75385,
+      "radiusKM": 35,
+      "images": [
+        "kyoto-01.jpg",
+        "kyoto-02.jpg",
+        "kyoto-03.jpg",
+        "kyoto-04.jpg",
+        "kyoto-05.jpg"
+      ]
+    },
+    {
+      "key": "osaka",
+      "names": [
+        "osaka"
+      ],
+      "geoIDs": [
+        "geo-1853909"
+      ],
+      "latitude": 34.69379,
+      "longitude": 135.50107,
+      "radiusKM": 35,
+      "images": [
+        "osaka-01.jpg",
+        "osaka-02.jpg",
+        "osaka-03.jpg",
+        "osaka-04.jpg",
+        "osaka-05.jpg"
+      ]
+    },
+    {
+      "key": "seoul",
+      "names": [
+        "seoul"
+      ],
+      "geoIDs": [
+        "geo-1835848"
+      ],
+      "latitude": 37.566,
+      "longitude": 126.9784,
+      "radiusKM": 35,
+      "images": [
+        "seoul-01.jpg",
+        "seoul-02.jpg",
+        "seoul-03.jpg",
+        "seoul-04.jpg",
+        "seoul-05.jpg"
+      ]
+    },
+    {
+      "key": "beijing",
+      "names": [
+        "beijing"
+      ],
+      "geoIDs": [
+        "geo-1816670"
+      ],
+      "latitude": 39.9075,
+      "longitude": 116.39723,
+      "radiusKM": 35,
+      "images": [
+        "beijing-01.jpg",
+        "beijing-02.jpg",
+        "beijing-03.jpg",
+        "beijing-04.jpg",
+        "beijing-05.jpg"
+      ]
+    },
+    {
+      "key": "shanghai",
+      "names": [
+        "shanghai"
+      ],
+      "geoIDs": [
+        "geo-1796236"
+      ],
+      "latitude": 31.22222,
+      "longitude": 121.45806,
+      "radiusKM": 35,
+      "images": [
+        "shanghai-01.jpg",
+        "shanghai-02.jpg",
+        "shanghai-03.jpg",
+        "shanghai-04.jpg",
+        "shanghai-05.jpg"
+      ]
+    },
+    {
+      "key": "hong-kong",
+      "names": [
+        "hong kong"
+      ],
+      "geoIDs": [
+        "geo-1819730"
+      ],
+      "latitude": 22.25,
+      "longitude": 114.16667,
+      "radiusKM": 35,
+      "images": [
+        "hong-kong-01.jpg",
+        "hong-kong-02.jpg",
+        "hong-kong-03.jpg",
+        "hong-kong-04.jpg",
+        "hong-kong-05.jpg"
+      ]
+    },
+    {
+      "key": "taipei",
+      "names": [
+        "taipei"
+      ],
+      "geoIDs": [
+        "geo-1668341"
+      ],
+      "latitude": 25.05306,
+      "longitude": 121.52639,
+      "radiusKM": 35,
+      "images": [
+        "taipei-01.jpg",
+        "taipei-02.jpg",
+        "taipei-03.jpg",
+        "taipei-04.jpg",
+        "taipei-05.jpg"
+      ]
+    },
+    {
+      "key": "bangkok",
+      "names": [
+        "bangkok"
+      ],
+      "geoIDs": [
+        "geo-1609350"
+      ],
+      "latitude": 13.75398,
+      "longitude": 100.50144,
+      "radiusKM": 35,
+      "images": [
+        "bangkok-01.jpg",
+        "bangkok-02.jpg",
+        "bangkok-03.jpg",
+        "bangkok-04.jpg",
+        "bangkok-05.jpg"
+      ]
+    },
+    {
+      "key": "hanoi",
+      "names": [
+        "hanoi"
+      ],
+      "geoIDs": [
+        "geo-1581130"
+      ],
+      "latitude": 21.0245,
+      "longitude": 105.84117,
+      "radiusKM": 35,
+      "images": [
+        "hanoi-01.jpg",
+        "hanoi-02.jpg",
+        "hanoi-03.jpg",
+        "hanoi-04.jpg",
+        "hanoi-05.jpg"
+      ]
+    },
+    {
+      "key": "kuala-lumpur",
+      "names": [
+        "kuala lumpur"
+      ],
+      "geoIDs": [
+        "geo-1735161"
+      ],
+      "latitude": 3.1412,
+      "longitude": 101.68653,
+      "radiusKM": 35,
+      "images": [
+        "kuala-lumpur-01.jpg",
+        "kuala-lumpur-02.jpg",
+        "kuala-lumpur-03.jpg",
+        "kuala-lumpur-04.jpg",
+        "kuala-lumpur-05.jpg"
+      ]
+    },
+    {
+      "key": "mumbai",
+      "names": [
+        "mumbai"
+      ],
+      "geoIDs": [
+        "geo-1275339"
+      ],
+      "latitude": 19.07283,
+      "longitude": 72.88261,
+      "radiusKM": 35,
+      "images": [
+        "mumbai-01.jpg",
+        "mumbai-02.jpg",
+        "mumbai-03.jpg",
+        "mumbai-04.jpg",
+        "mumbai-05.jpg"
+      ]
+    },
+    {
+      "key": "new-delhi",
+      "names": [
+        "new delhi"
+      ],
+      "geoIDs": [
+        "geo-1261481"
+      ],
+      "latitude": 28.62137,
+      "longitude": 77.2148,
+      "radiusKM": 35,
+      "images": [
+        "new-delhi-01.jpg",
+        "new-delhi-02.jpg",
+        "new-delhi-03.jpg",
+        "new-delhi-04.jpg",
+        "new-delhi-05.jpg"
+      ]
+    },
+    {
+      "key": "dubai",
+      "names": [
+        "dubai"
+      ],
+      "geoIDs": [
+        "geo-292223"
+      ],
+      "latitude": 25.07725,
+      "longitude": 55.30927,
+      "radiusKM": 35,
+      "images": [
+        "dubai-01.jpg",
+        "dubai-02.jpg",
+        "dubai-03.jpg",
+        "dubai-04.jpg",
+        "dubai-05.jpg"
+      ]
+    },
+    {
+      "key": "istanbul",
+      "names": [
+        "istanbul"
+      ],
+      "geoIDs": [
+        "geo-745044"
+      ],
+      "latitude": 41.01384,
+      "longitude": 28.94966,
+      "radiusKM": 35,
+      "images": [
+        "istanbul-01.jpg",
+        "istanbul-02.jpg",
+        "istanbul-03.jpg",
+        "istanbul-04.jpg",
+        "istanbul-05.jpg"
+      ]
+    },
+    {
+      "key": "cairo",
+      "names": [
+        "cairo"
+      ],
+      "geoIDs": [
+        "geo-360630"
+      ],
+      "latitude": 30.06263,
+      "longitude": 31.24967,
+      "radiusKM": 35,
+      "images": [
+        "cairo-01.jpg",
+        "cairo-02.jpg",
+        "cairo-03.jpg",
+        "cairo-04.jpg",
+        "cairo-05.jpg"
+      ]
+    },
+    {
+      "key": "cape-town",
+      "names": [
+        "cape town"
+      ],
+      "geoIDs": [
+        "geo-3369157"
+      ],
+      "latitude": -33.92584,
+      "longitude": 18.42322,
+      "radiusKM": 35,
+      "images": [
+        "cape-town-01.jpg",
+        "cape-town-02.jpg",
+        "cape-town-03.jpg",
+        "cape-town-04.jpg",
+        "cape-town-05.jpg"
+      ]
+    },
+    {
+      "key": "marrakesh",
+      "names": [
+        "marrakesh",
+        "marrakech"
+      ],
+      "geoIDs": [
+        "geo-2542997"
+      ],
+      "latitude": 31.63416,
+      "longitude": -7.99994,
+      "radiusKM": 35,
+      "images": [
+        "marrakesh-01.jpg",
+        "marrakesh-02.jpg",
+        "marrakesh-03.jpg",
+        "marrakesh-04.jpg",
+        "marrakesh-05.jpg"
+      ]
+    },
+    {
+      "key": "rome",
+      "names": [
+        "rome"
+      ],
+      "geoIDs": [
+        "geo-3169070"
+      ],
+      "latitude": 41.89193,
+      "longitude": 12.51133,
+      "radiusKM": 35,
+      "images": [
+        "rome-01.jpg",
+        "rome-02.jpg",
+        "rome-03.jpg",
+        "rome-04.jpg",
+        "rome-05.jpg"
+      ]
+    },
+    {
+      "key": "venice",
+      "names": [
+        "venice"
+      ],
+      "geoIDs": [
+        "geo-3164603"
+      ],
+      "latitude": 45.43713,
+      "longitude": 12.33265,
+      "radiusKM": 35,
+      "images": [
+        "venice-01.jpg",
+        "venice-02.jpg",
+        "venice-03.jpg",
+        "venice-04.jpg",
+        "venice-05.jpg"
+      ]
+    },
+    {
+      "key": "barcelona",
+      "names": [
+        "barcelona"
+      ],
+      "geoIDs": [
+        "geo-3128760"
+      ],
+      "latitude": 41.38879,
+      "longitude": 2.15899,
+      "radiusKM": 35,
+      "images": [
+        "barcelona-01.jpg",
+        "barcelona-02.jpg",
+        "barcelona-03.jpg",
+        "barcelona-04.jpg",
+        "barcelona-05.jpg"
+      ]
+    },
+    {
+      "key": "lisbon",
+      "names": [
+        "lisbon"
+      ],
+      "geoIDs": [
+        "geo-2267057"
+      ],
+      "latitude": 38.72509,
+      "longitude": -9.1498,
+      "radiusKM": 35,
+      "images": [
+        "lisbon-01.jpg",
+        "lisbon-02.jpg",
+        "lisbon-03.jpg",
+        "lisbon-04.jpg",
+        "lisbon-05.jpg"
+      ]
+    },
+    {
+      "key": "amsterdam",
+      "names": [
+        "amsterdam"
+      ],
+      "geoIDs": [
+        "geo-2759794"
+      ],
+      "latitude": 52.37403,
+      "longitude": 4.88969,
+      "radiusKM": 35,
+      "images": [
+        "amsterdam-01.jpg",
+        "amsterdam-02.jpg",
+        "amsterdam-03.jpg",
+        "amsterdam-04.jpg",
+        "amsterdam-05.jpg"
+      ]
+    },
+    {
+      "key": "berlin",
+      "names": [
+        "berlin"
+      ],
+      "geoIDs": [
+        "geo-2950159"
+      ],
+      "latitude": 52.52437,
+      "longitude": 13.41053,
+      "radiusKM": 35,
+      "images": [
+        "berlin-01.jpg",
+        "berlin-02.jpg",
+        "berlin-03.jpg",
+        "berlin-04.jpg",
+        "berlin-05.jpg"
+      ]
+    },
+    {
+      "key": "prague",
+      "names": [
+        "prague"
+      ],
+      "geoIDs": [
+        "geo-3067696"
+      ],
+      "latitude": 50.08804,
+      "longitude": 14.42076,
+      "radiusKM": 35,
+      "images": [
+        "prague-01.jpg",
+        "prague-02.jpg",
+        "prague-03.jpg",
+        "prague-04.jpg",
+        "prague-05.jpg"
+      ]
+    },
+    {
+      "key": "vienna",
+      "names": [
+        "vienna"
+      ],
+      "geoIDs": [
+        "geo-2761369"
+      ],
+      "latitude": 48.20849,
+      "longitude": 16.37208,
+      "radiusKM": 35,
+      "images": [
+        "vienna-01.jpg",
+        "vienna-02.jpg",
+        "vienna-03.jpg",
+        "vienna-04.jpg",
+        "vienna-05.jpg"
+      ]
+    },
+    {
+      "key": "stockholm",
+      "names": [
+        "stockholm"
+      ],
+      "geoIDs": [
+        "geo-2673730"
+      ],
+      "latitude": 59.32938,
+      "longitude": 18.06871,
+      "radiusKM": 35,
+      "images": [
+        "stockholm-01.jpg",
+        "stockholm-02.jpg",
+        "stockholm-03.jpg",
+        "stockholm-04.jpg",
+        "stockholm-05.jpg"
+      ]
+    },
+    {
+      "key": "copenhagen",
+      "names": [
+        "copenhagen"
+      ],
+      "geoIDs": [
+        "geo-2618425"
+      ],
+      "latitude": 55.67594,
+      "longitude": 12.56553,
+      "radiusKM": 35,
+      "images": [
+        "copenhagen-01.jpg",
+        "copenhagen-02.jpg",
+        "copenhagen-03.jpg",
+        "copenhagen-04.jpg",
+        "copenhagen-05.jpg"
+      ]
+    },
+    {
+      "key": "san-francisco",
+      "names": [
+        "san francisco"
+      ],
+      "geoIDs": [
+        "geo-5391959"
+      ],
+      "latitude": 37.77493,
+      "longitude": -122.41942,
+      "radiusKM": 35,
+      "images": [
+        "san-francisco-01.jpg",
+        "san-francisco-02.jpg",
+        "san-francisco-03.jpg",
+        "san-francisco-04.jpg",
+        "san-francisco-05.jpg"
+      ]
+    },
+    {
+      "key": "los-angeles",
+      "names": [
+        "los angeles"
+      ],
+      "geoIDs": [
+        "geo-5368361"
+      ],
+      "latitude": 34.05223,
+      "longitude": -118.24368,
+      "radiusKM": 35,
+      "images": [
+        "los-angeles-01.jpg",
+        "los-angeles-02.jpg",
+        "los-angeles-03.jpg",
+        "los-angeles-04.jpg",
+        "los-angeles-05.jpg"
+      ]
+    },
+    {
+      "key": "seattle",
+      "names": [
+        "seattle"
+      ],
+      "geoIDs": [
+        "geo-5809844"
+      ],
+      "latitude": 47.60621,
+      "longitude": -122.33207,
+      "radiusKM": 35,
+      "images": [
+        "seattle-01.jpg",
+        "seattle-02.jpg",
+        "seattle-03.jpg",
+        "seattle-04.jpg",
+        "seattle-05.jpg"
+      ]
+    },
+    {
+      "key": "chicago",
+      "names": [
+        "chicago"
+      ],
+      "geoIDs": [
+        "geo-4887398"
+      ],
+      "latitude": 41.85003,
+      "longitude": -87.65005,
+      "radiusKM": 35,
+      "images": [
+        "chicago-01.jpg",
+        "chicago-02.jpg",
+        "chicago-03.jpg",
+        "chicago-04.jpg",
+        "chicago-05.jpg"
+      ]
+    },
+    {
+      "key": "vancouver",
+      "names": [
+        "vancouver"
+      ],
+      "geoIDs": [
+        "geo-6173331"
+      ],
+      "latitude": 49.24966,
+      "longitude": -123.11934,
+      "radiusKM": 35,
+      "images": [
+        "vancouver-01.jpg",
+        "vancouver-02.jpg",
+        "vancouver-03.jpg",
+        "vancouver-04.jpg",
+        "vancouver-05.jpg"
+      ]
+    },
+    {
+      "key": "toronto",
+      "names": [
+        "toronto"
+      ],
+      "geoIDs": [
+        "geo-6167865"
+      ],
+      "latitude": 43.70643,
+      "longitude": -79.39864,
+      "radiusKM": 35,
+      "images": [
+        "toronto-01.jpg",
+        "toronto-02.jpg",
+        "toronto-03.jpg",
+        "toronto-04.jpg",
+        "toronto-05.jpg"
+      ]
+    },
+    {
+      "key": "mexico-city",
+      "names": [
+        "mexico city"
+      ],
+      "geoIDs": [
+        "geo-3530597"
+      ],
+      "latitude": 19.42847,
+      "longitude": -99.12766,
+      "radiusKM": 35,
+      "images": [
+        "mexico-city-01.jpg",
+        "mexico-city-02.jpg",
+        "mexico-city-03.jpg",
+        "mexico-city-04.jpg",
+        "mexico-city-05.jpg"
+      ]
+    },
+    {
+      "key": "rio-de-janeiro",
+      "names": [
+        "rio de janeiro"
+      ],
+      "geoIDs": [
+        "geo-3451190"
+      ],
+      "latitude": -22.90642,
+      "longitude": -43.18223,
+      "radiusKM": 35,
+      "images": [
+        "rio-de-janeiro-01.jpg",
+        "rio-de-janeiro-02.jpg",
+        "rio-de-janeiro-03.jpg",
+        "rio-de-janeiro-04.jpg",
+        "rio-de-janeiro-05.jpg"
+      ]
+    },
+    {
+      "key": "buenos-aires",
+      "names": [
+        "buenos aires"
+      ],
+      "geoIDs": [
+        "geo-3435910"
+      ],
+      "latitude": -34.61315,
+      "longitude": -58.37723,
+      "radiusKM": 35,
+      "images": [
+        "buenos-aires-01.jpg",
+        "buenos-aires-02.jpg",
+        "buenos-aires-03.jpg",
+        "buenos-aires-04.jpg",
+        "buenos-aires-05.jpg"
+      ]
+    },
+    {
+      "key": "sydney",
+      "names": [
+        "sydney"
+      ],
+      "geoIDs": [
+        "geo-2147714"
+      ],
+      "latitude": -33.86785,
+      "longitude": 151.20732,
+      "radiusKM": 35,
+      "images": [
+        "sydney-01.jpg",
+        "sydney-02.jpg",
+        "sydney-03.jpg",
+        "sydney-04.jpg",
+        "sydney-05.jpg"
+      ]
+    },
+    {
+      "key": "melbourne",
+      "names": [
+        "melbourne"
+      ],
+      "geoIDs": [
+        "geo-2158177"
+      ],
+      "latitude": -37.814,
+      "longitude": 144.96332,
+      "radiusKM": 35,
+      "images": [
+        "melbourne-01.jpg",
+        "melbourne-02.jpg",
+        "melbourne-03.jpg",
+        "melbourne-04.jpg",
+        "melbourne-05.jpg"
+      ]
+    },
+    {
+      "key": "auckland",
+      "names": [
+        "auckland"
+      ],
+      "geoIDs": [
+        "geo-2193733"
+      ],
+      "latitude": -36.84853,
+      "longitude": 174.76349,
+      "radiusKM": 35,
+      "images": [
+        "auckland-01.jpg",
+        "auckland-02.jpg",
+        "auckland-03.jpg",
+        "auckland-04.jpg",
+        "auckland-05.jpg"
+      ]
+    },
+    {
+      "key": "honolulu",
+      "names": [
+        "honolulu"
+      ],
+      "geoIDs": [
+        "geo-5856195"
+      ],
+      "latitude": 21.30694,
+      "longitude": -157.85834,
+      "radiusKM": 35,
+      "images": [
+        "honolulu-01.jpg",
+        "honolulu-02.jpg",
+        "honolulu-03.jpg",
+        "honolulu-04.jpg",
+        "honolulu-05.jpg"
+      ]
+    },
+    {
+      "key": "athens",
+      "names": [
+        "athens"
+      ],
+      "geoIDs": [
+        "geo-264371"
+      ],
+      "latitude": 37.98376,
+      "longitude": 23.72784,
+      "radiusKM": 35,
+      "images": [
+        "athens-01.jpg",
+        "athens-02.jpg",
+        "athens-03.jpg",
+        "athens-04.jpg",
+        "athens-05.jpg"
+      ]
+    },
+    {
+      "key": "zurich",
+      "names": [
+        "zurich"
+      ],
+      "geoIDs": [
+        "geo-2657896"
+      ],
+      "latitude": 47.36667,
+      "longitude": 8.55,
+      "radiusKM": 35,
+      "images": [
+        "zurich-01.jpg",
+        "zurich-02.jpg",
+        "zurich-03.jpg",
+        "zurich-04.jpg",
+        "zurich-05.jpg"
+      ]
+    }
+  ]
+}

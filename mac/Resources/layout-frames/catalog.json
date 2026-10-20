@@ -1,0 +1,46 @@
+[
+  {
+    "id": "samsung",
+    "name": "Samsung",
+    "fileName": "samsung.png",
+    "width": 1546,
+    "height": 1017,
+    "screenX": 0.03234152652005175,
+    "screenY": 0.07964601769911504,
+    "screenWidth": 0.9353169469598965,
+    "screenHeight": 0.7581120943952803
+  },
+  {
+    "id": "lg",
+    "name": "LG",
+    "fileName": "lg.png",
+    "width": 1545,
+    "height": 1018,
+    "screenX": 0.020064724919093852,
+    "screenY": 0.06483300589390963,
+    "screenWidth": 0.9605177993527508,
+    "screenHeight": 0.7701375245579568
+  },
+  {
+    "id": "tcl",
+    "name": "TCL",
+    "fileName": "tcl.png",
+    "width": 1546,
+    "height": 1017,
+    "screenX": 0.03880983182406209,
+    "screenY": 0.07964601769911504,
+    "screenWidth": 0.9236739974126779,
+    "screenHeight": 0.7590953785644051
+  },
+  {
+    "id": "hisense",
+    "name": "Hisense",
+    "fileName": "hisense.png",
+    "width": 1546,
+    "height": 1017,
+    "screenX": 0.037516170763260026,
+    "screenY": 0.08062930186823992,
+    "screenWidth": 0.926261319534282,
+    "screenHeight": 0.7502458210422812
+  }
+]

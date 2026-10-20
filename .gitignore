@@ -1,0 +1,40 @@
+# Restricted source assets. Obtain them separately under their applicable terms.
+shared/icons/
+mac/Resources/layout-frames/sony.png
+mac/Resources/layout-frames/provenance.json
+mac/Resources/sony-preview.png
+mac/Resources/icons/*.png
+!mac/Resources/icons/brand_*.png
+!mac/Resources/icons/netflix_logo.png
+!mac/Resources/icons/spotify_logo.png
+!mac/Resources/icons/twitch_logo.png
+!mac/Resources/icons/hulu_logo.png
+!mac/Resources/icons/prime_video_logo.png
+!mac/Resources/icons/switch_icon.png
+!mac/Resources/icons/switch_logo.png
+
+# Local build products and Apple notarization submissions.
+build/
+*.dmg
+*.zip
+.env*
+*.p8
+*.p12
+*.pem
+*.key
+*.cer
+*.mobileprovision
+*.keystore
+*.jks
+signing/
+.DS_Store
+credentials/
+user-state/
+
+# Web end-product assets exported from a separately licensed icon set.
+website/assets/ui-icons/
+node_modules/
+.wrangler/
+*.log
+*.apk
+*.idsig

@@ -1,0 +1,49 @@
+{
+  "library": "UI SFX",
+  "version": "0.4.0",
+  "revision": "9950fe66f993a6660dab9c2651dcbcd899ffd83b",
+  "author": "Yuki Capital",
+  "license": "CC0-1.0",
+  "assets": [
+    {
+      "id": "soft",
+      "sourcePack": "soft",
+      "cue": "focus",
+      "sourceURL": "https://github.com/romainsimon/uisfx/blob/9950fe66f993a6660dab9c2651dcbcd899ffd83b/packages/uisfx/sounds/soft/focus.mp3",
+      "sha256": "1df7e6c8821d324345ea9306ab0741aa6ec4d74dd6faa443a9e95930e4796335",
+      "bytes": 3177
+    },
+    {
+      "id": "glass",
+      "sourcePack": "glass",
+      "cue": "focus",
+      "sourceURL": "https://github.com/romainsimon/uisfx/blob/9950fe66f993a6660dab9c2651dcbcd899ffd83b/packages/uisfx/sounds/glass/focus.mp3",
+      "sha256": "0e0a920fa2953d174c7b9d8d42d013196667d95698df2d71c6c84593abc838d9",
+      "bytes": 4013
+    },
+    {
+      "id": "wood",
+      "sourcePack": "organic",
+      "cue": "focus",
+      "sourceURL": "https://github.com/romainsimon/uisfx/blob/9950fe66f993a6660dab9c2651dcbcd899ffd83b/packages/uisfx/sounds/organic/focus.mp3",
+      "sha256": "366f07b40f27829555c92174fed04488f78fc054dfb14a2d7d2174b213096f90",
+      "bytes": 3595
+    },
+    {
+      "id": "bubble",
+      "sourcePack": "rubber",
+      "cue": "focus",
+      "sourceURL": "https://github.com/romainsimon/uisfx/blob/9950fe66f993a6660dab9c2651dcbcd899ffd83b/packages/uisfx/sounds/rubber/focus.mp3",
+      "sha256": "9f71da9643bd8f13049ace93b036eb3b2f2c619634f96b33aea5701dfda44553",
+      "bytes": 2341
+    },
+    {
+      "id": "chime",
+      "sourcePack": "zen",
+      "cue": "focus",
+      "sourceURL": "https://github.com/romainsimon/uisfx/blob/9950fe66f993a6660dab9c2651dcbcd899ffd83b/packages/uisfx/sounds/zen/focus.mp3",
+      "sha256": "4e6eea187892ec162a5923bfb28bcc5436495a08b9bf4e844f5678a27a91a98f",
+      "bytes": 2132
+    }
+  ]
+}
