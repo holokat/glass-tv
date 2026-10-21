@@ -17,3 +17,14 @@
 /* A refractive lens under the launcher controls, clipped to the television. */
 .hero-glass{position:absolute;left:0;top:0;pointer-events:none;opacity:0;contain:strict}
 @media(prefers-reduced-motion:reduce),(hover:none),(pointer:coarse){.hero-glass{display:none}}
+
+/* Quiet titanium highlights; the text remains selectable and readable without clipping support. */
+.title-tint{color:var(--title-base,#b6c6d4)}
+.title-tint-blue{--title-base:#b6c6d4;--title-low:#8fabbf;--title-high:#e0e6ea;--title-mid:#a4bac9}
+.title-tint-green{--title-base:#b7c9be;--title-low:#93ad9f;--title-high:#e0e8e2;--title-mid:#a8bdb0}
+.title-tint-red{--title-base:#ceb9b7;--title-low:#b79896;--title-high:#eee0db;--title-mid:#c8aaa6}
+.title-tint-warm{--title-base:#c8beb0;--title-low:#aa9f8e;--title-high:#e9e3d9;--title-mid:#c1b39f}
+@supports ((background-clip:text) or (-webkit-background-clip:text)){
+.title-tint{background-image:linear-gradient(115deg,var(--title-low) 0%,var(--title-base) 24%,var(--title-high) 45%,var(--title-mid) 65%,var(--title-base) 82%,var(--title-high) 100%);background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+}
+@media (forced-colors:active){.title-tint{background:none;color:CanvasText;-webkit-text-fill-color:CanvasText}}
