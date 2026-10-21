@@ -1,6 +1,5 @@
 package local.glasstv.launcher;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -21,19 +20,16 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.InputType;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -67,8 +63,7 @@ final class RadioController {
   private static final String FAVORITE_RECORDS_KEY = "favoriteStationRecords";
   private static final String RECENT_KEY = "recentStationRecords";
   private static final String VOLUME_KEY = "radioVolume";
-
-
+  private static final int DEFAULT_VOLUME = 70;
   private final Context context;
   private final Host host;
   private final FrostedBackdrop frostedBackdrop;
@@ -80,20 +75,24 @@ final class RadioController {
   private final AudioManager.OnAudioFocusChangeListener audioFocus = this::onAudioFocusChanged;
   private final FrameLayout overlay;
   private final ImageView backdrop;
-  private final TextView browseTab, favoritesTab, searchTab, searchField, title, subtitle, status;
+  private static final int CARD_WIDTH_DP = 284;
+  private static final int CARD_HEIGHT_DP = 200;
+
+  private final TextView searchField, title, status;
   private final LinearLayout sections;
   private final FrameLayout playerBar;
   private final ImageView playerArtwork;
-  private final TextView playerName, playerGenre, previous, pause, next;
-  private final SeekBar volume;
-  private final LinearLayout content, sidebar;
+  private final TextView playerName, playerGenre, previous, pause, next, playerFavorite;
+  private final LinearLayout content;
   private final RadioSearchOverlay searchOverlay;
   private final ArrayList<RadioStationPolicy.Station> browseStations = new ArrayList<>();
   private final RadioArtwork stationArtwork = new RadioArtwork();
   private final Map<String, Bitmap> categoryArtwork = new HashMap<>();
   private final ArrayList<RadioStationPolicy.Station> playableStations = new ArrayList<>();
+  private final ArrayList<ArrayList<View>> focusRows = new ArrayList<>();
   private SearchState searchState;
-  private boolean favoritesMode, paused, pendingPlayback;
+  private boolean paused, pendingPlayback, legacyFavoritesHydrationAttempted;
+  private String playerReturnFocusKey;
   private volatile int screenGeneration, playbackGeneration;
   private MediaPlayer player;
   private RadioStationPolicy.Station playing;
@@ -131,37 +130,15 @@ final class RadioController {
     shade.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
     overlay.addView(shade, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-    sidebar = new LinearLayout(context);
-    sidebar.setOrientation(LinearLayout.VERTICAL);
-    // Three generous remote targets sit within the inset glass rail.
-    sidebar.setPadding(dp(10), dp(12), dp(10), dp(12));
-    sidebar.setBackground(new GlassBackground(dp(24), 0x22ffffff, true));
-    FrameLayout.LayoutParams sidebarParams = new FrameLayout.LayoutParams(dp(134), dp(151), Gravity.LEFT | Gravity.TOP);
-    sidebarParams.setMargins(dp(16), dp(29), 0, 0);
-    overlay.addView(sidebar, sidebarParams);
-    browseTab = sideAction("Browse", "podcast");
-    favoritesTab = sideAction("Favorites", "heart");
-    searchTab = sideAction("Search", "search");
-    sidebar.addView(browseTab, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(42)));
-    LinearLayout.LayoutParams favoriteTabParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(42));
-    favoriteTabParams.setMargins(0, 0, 0, 0);
-    sidebar.addView(favoritesTab, favoriteTabParams);
-    LinearLayout.LayoutParams searchTabParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(42));
-    searchTabParams.setMargins(0, 0, 0, 0);
-    sidebar.addView(searchTab, searchTabParams);
-
     content = new LinearLayout(context);
     content.setOrientation(LinearLayout.VERTICAL);
-    FrameLayout.LayoutParams contentParams = new FrameLayout.LayoutParams(dp(760), dp(494), Gravity.LEFT | Gravity.TOP);
-    contentParams.setMargins(dp(180), dp(22), 0, 0);
+    FrameLayout.LayoutParams contentParams = new FrameLayout.LayoutParams(dp(912), dp(494), Gravity.LEFT | Gravity.TOP);
+    contentParams.setMargins(dp(24), dp(22), 0, 0);
     overlay.addView(content, contentParams);
     title = text(40, Color.WHITE);
     title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
     title.setText("Radio");
     content.addView(title, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)));
-    subtitle = text(12, 0xc7ffffff);
-    subtitle.setText("Discover stations from around the world");
-    subtitle.setVisibility(View.GONE);
     searchField = action("Search stations or genres", "search");
     searchField.setBackground(new GlassBackground(dp(20), 0x28ffffff, true));
     searchField.setGravity(Gravity.CENTER_VERTICAL);
@@ -170,15 +147,26 @@ final class RadioController {
     searchField.setTextSize(16);
     searchField.setSingleLine(true);
     searchField.setContentDescription("Search stations, genres, or moods");
+    searchField.setId(View.generateViewId());
     searchField.setOnClickListener(v -> showSearch());
-    LinearLayout.LayoutParams searchParams = new LinearLayout.LayoutParams(dp(390), dp(40));
+    searchField.setOnKeyListener((view, key, event) -> {
+      if (event.getAction() == KeyEvent.ACTION_DOWN && key == KeyEvent.KEYCODE_DPAD_DOWN) {
+        View first = firstFocusableCard();
+        if (first != null) {
+          first.requestFocus();
+          return true;
+        }
+      }
+      return false;
+    });
+    LinearLayout.LayoutParams searchParams = new LinearLayout.LayoutParams(dp(424), dp(40));
     searchParams.setMargins(0, dp(12), 0, dp(20));
     content.addView(searchField, searchParams);
     status = text(13, 0xbfffffff);
     status.setSingleLine(true);
     status.setVisibility(View.GONE);
-    FrameLayout.LayoutParams statusParams = new FrameLayout.LayoutParams(dp(760), dp(22), Gravity.LEFT | Gravity.TOP);
-    statusParams.setMargins(dp(180), dp(138), 0, 0);
+    FrameLayout.LayoutParams statusParams = new FrameLayout.LayoutParams(dp(912), dp(22), Gravity.LEFT | Gravity.TOP);
+    statusParams.setMargins(dp(24), dp(138), 0, 0);
     overlay.addView(status, statusParams);
     ScrollView scroll = new ScrollView(context);
     scroll.setFillViewport(true);
@@ -218,6 +206,9 @@ final class RadioController {
     previous = iconAction("Previous station", "previous");
     pause = iconAction("Play or pause radio", "play");
     next = iconAction("Next station", "next");
+    previous.setId(View.generateViewId());
+    pause.setId(View.generateViewId());
+    next.setId(View.generateViewId());
     previous.setOnClickListener(v -> playAdjacent(-1));
     pause.setOnClickListener(v -> togglePause());
     pause.setBackground(new GlassBackground(dp(20), 0x65ffffff));
@@ -232,32 +223,14 @@ final class RadioController {
     FrameLayout.LayoutParams controlsParams = new FrameLayout.LayoutParams(dp(144), dp(56), Gravity.LEFT | Gravity.TOP);
     controlsParams.setMargins(dp(396), dp(2), 0, 0);
     playerBar.addView(controls, controlsParams);
-    TextView volumeIcon = new TransportButton(context);
-    setIcon(volumeIcon, "volume", 23);
-    volumeIcon.setContentDescription("Volume");
-    volumeIcon.setGravity(Gravity.CENTER);
-    FrameLayout.LayoutParams volumeIconParams = new FrameLayout.LayoutParams(dp(36), dp(48), Gravity.LEFT | Gravity.TOP);
-    volumeIconParams.setMargins(dp(748), dp(6), 0, 0);
-    playerBar.addView(volumeIcon, volumeIconParams);
-    volume = new SeekBar(context);
-    volume.setMax(100);
-    volume.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));
-    volume.setThumbTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));
-    volume.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0x35ffffff));
-    volume.setProgress(prefs.getInt(VOLUME_KEY, 70));
-    volume.setContentDescription("Radio volume");
-    volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-      @Override public void onProgressChanged(SeekBar bar, int value, boolean user) { updateVolume(value); }
-      @Override public void onStartTrackingTouch(SeekBar bar) {}
-      @Override public void onStopTrackingTouch(SeekBar bar) {}
-    });
-    FrameLayout.LayoutParams volumeParams = new FrameLayout.LayoutParams(dp(142), dp(48), Gravity.LEFT | Gravity.TOP);
-    volumeParams.setMargins(dp(784), dp(6), 0, 0);
-    playerBar.addView(volume, volumeParams);
-    browseTab.setOnClickListener(v -> openBrowse());
-    favoritesTab.setOnClickListener(v -> openFavorites());
-    searchTab.setOnClickListener(v -> showSearch());
-    updateTabs();
+    playerFavorite = iconAction("Save station", "heart");
+    playerFavorite.setId(View.generateViewId());
+    playerFavorite.setOnClickListener(v -> togglePlayingFavorite());
+    FrameLayout.LayoutParams favoriteParams = new FrameLayout.LayoutParams(dp(48), dp(48), Gravity.RIGHT | Gravity.TOP);
+    favoriteParams.setMargins(0, dp(6), dp(16), 0);
+    playerBar.addView(playerFavorite, favoriteParams);
+    next.setNextFocusRightId(playerFavorite.getId());
+    playerFavorite.setNextFocusLeftId(next.getId());
     updatePlayer();
     searchOverlay = new RadioSearchOverlay(context, overlay, stationArtwork, this::play);
     parent.addView(overlay, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -267,8 +240,9 @@ final class RadioController {
     if (isOpen()) return;
     host.suspendAmbientForRadio();
     overlay.setVisibility(View.VISIBLE);
+    legacyFavoritesHydrationAttempted = false;
     openBrowse();
-    browseTab.requestFocus();
+    searchField.requestFocus();
   }
 
   boolean isOpen() { return overlay.getVisibility() == View.VISIBLE; }
@@ -286,7 +260,12 @@ final class RadioController {
 
   boolean handleKey(int key) {
     if (!isOpen()) return false;
-    if (key == KeyEvent.KEYCODE_BACK) { if (searchOverlay.isOpen()) searchOverlay.close(); else close(); return true; }
+    if (key == KeyEvent.KEYCODE_BACK) {
+      if (searchOverlay.isOpen()) searchOverlay.close();
+      else if (searchState != null) { openBrowse(); searchField.requestFocus(); }
+      else close();
+      return true;
+    }
     if (key == KeyEvent.KEYCODE_MEDIA_STOP) { stopPlayback(); clearStatus(); return true; }
     if (key == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) { togglePause(); return true; }
     if (key == KeyEvent.KEYCODE_MEDIA_PAUSE) { pausePlayback(); return true; }
@@ -309,30 +288,21 @@ final class RadioController {
   }
 
   private void openBrowse() {
-    favoritesMode = false;
+    searchState = null;
     title.setText("Radio");
-    subtitle.setText("Discover stations from around the world");
-    updateTabs();
     loadBrowse();
-  }
-
-  private void openFavorites() {
-    favoritesMode = true;
-    title.setText("Favorites");
-    subtitle.setText("Saved stations are rechecked before they play");
-    updateTabs();
-    showFavorites();
   }
 
   private void loadBrowse() {
     final int request = ++screenGeneration;
     setStatus("Loading popular stations from Radio Browser…");
     sections.removeAllViews();
+    focusRows.clear();
     addLoading();
     network.execute(() -> {
       try {
         RadioDirectory.Page popular = directory.popular(new RadioDirectory.Cursor());
-        main.post(() -> { if (fresh(request) && !favoritesMode) showBrowse(popular.stations); });
+        main.post(() -> { if (fresh(request)) showBrowse(popular.stations); });
       } catch (Exception failure) {
         main.post(() -> { if (fresh(request)) showRetry("Radio directory is unavailable. Check the connection and retry.", this::loadBrowse); });
       }
@@ -340,61 +310,58 @@ final class RadioController {
   }
 
   private void showBrowse(List<RadioStationPolicy.Station> popular) {
-    updateTabs();
+    View focusedCard = sections.findFocus();
+    String focusedKey = focusedCard == null ? null : focusKey(focusedCard);
     sections.removeAllViews();
+    focusRows.clear();
     clearStatus();
     playableStations.clear();
     List<RadioStationPolicy.Station> recent = recentStations();
     List<RadioStationPolicy.Station> favorites = favoriteStations();
     browseStations.clear();
     browseStations.addAll(popular);
+    addBrowseSections(recent, favorites, popular);
+    if (focusedKey != null) {
+      View replacement = findCardByFocusKey(focusedKey);
+      if (replacement == null) replacement = firstFocusableCard();
+      if (replacement != null) replacement.requestFocus();
+    }
+    if (favorites.isEmpty() && !favoriteIds().isEmpty() && !legacyFavoritesHydrationAttempted) {
+      legacyFavoritesHydrationAttempted = true;
+      loadLegacyFavoritesForBrowse(popular);
+    }
+  }
+
+  private void addBrowseSections(
+      List<RadioStationPolicy.Station> recent,
+      List<RadioStationPolicy.Station> favorites,
+      List<RadioStationPolicy.Station> popular) {
     if (!recent.isEmpty()) addStationSection("Recent", recent);
     if (!favorites.isEmpty()) addStationSection("Favorites", favorites);
     if (popular.isEmpty()) addEmptySection("Popular", "No eligible popular stations were found.");
     else addStationSection("Popular", popular);
     addGenreSection();
+    updateCardPlayerRoutes(hasActivePlayerSession());
+    refreshPlayerReturnFocus();
   }
 
-  private void showFavorites() {
-    ++screenGeneration;
-    sections.removeAllViews();
-    List<RadioStationPolicy.Station> favorites = favoriteStations();
-    playableStations.clear();
-    // Migrate favorites saved by the previous UUID-only screen without inventing station data.
-    if (favorites.isEmpty() && !favoriteIds().isEmpty()) {
-      loadLegacyFavorites();
-      return;
-    }
-    if (favorites.isEmpty()) {
-      clearStatus();
-      addEmptySection("Favorites", "No saved stations yet.");
-    } else {
-      clearStatus();
-      addStationSection("Favorites", favorites);
-    }
-  }
-
-  private void loadLegacyFavorites() {
+  /** Migrates UUID-only saves into the real metadata cards used by the sidebar-free browse view. */
+  private void loadLegacyFavoritesForBrowse(final List<RadioStationPolicy.Station> popular) {
     final int request = ++screenGeneration;
     setStatus("Loading saved stations…");
-    addLoading();
     final List<String> ids = new ArrayList<>(favoriteIds());
     network.execute(() -> {
       try {
         List<RadioStationPolicy.Station> stations = directory.favorites(ids);
         main.post(() -> {
-          if (!fresh(request) || !favoritesMode) return;
+          if (!fresh(request)) return;
           prefs.edit().putString(FAVORITE_RECORDS_KEY, encodeStations(stations, MAX_FAVORITES)).apply();
-          sections.removeAllViews();
-          playableStations.clear();
-          if (stations.isEmpty()) addEmptySection("Favorites", "No saved stations are currently eligible.");
-          else addStationSection("Favorites", stations);
-          clearStatus();
+          showBrowse(popular);
         });
       } catch (Exception failure) {
         main.post(() -> {
-          if (fresh(request) && favoritesMode)
-            showRetry("Saved station details could not be loaded while offline.", this::showFavorites);
+          if (fresh(request))
+            setStatus("Saved stations could not be refreshed while offline.");
         });
       }
     });
@@ -420,17 +387,20 @@ final class RadioController {
     LinearLayout cards = new LinearLayout(context);
     cards.setOrientation(LinearLayout.HORIZONTAL);
     cards.setPadding(0, 0, dp(8), 0);
+    ArrayList<View> focusRow = new ArrayList<>();
     int limit = Math.min(maximumCards, stations.size());
     for (int index = 0; index < limit; index++) {
       RadioStationPolicy.Station station = stations.get(index);
       if (!contains(playableStations, station.uuid)) playableStations.add(station);
-      View card = stationCard(station, index, favoriteIds().contains(station.uuid));
-      LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(dp(142), dp(100));
-      if (index > 0) cardParams.setMargins(dp(8), 0, 0, 0);
+      View card = stationCard(station);
+      focusRow.add(card);
+      LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(dp(CARD_WIDTH_DP), dp(CARD_HEIGHT_DP));
+      if (index > 0) cardParams.setMargins(dp(12), 0, 0, 0);
       cards.addView(card, cardParams);
     }
-    strip.addView(cards, new HorizontalScrollView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(100)));
-    sections.addView(strip, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(100)));
+    strip.addView(cards, new HorizontalScrollView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(CARD_HEIGHT_DP)));
+    sections.addView(strip, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(CARD_HEIGHT_DP)));
+    if (!focusRow.isEmpty()) focusRows.add(focusRow);
   }
 
   private void addGenreSection() {
@@ -443,10 +413,14 @@ final class RadioController {
     HorizontalScrollView strip = new HorizontalScrollView(context);
     strip.setHorizontalScrollBarEnabled(false);
     LinearLayout cards = new LinearLayout(context);
+    ArrayList<View> focusRow = new ArrayList<>();
     for (String genre : directory.musicGenres()) {
       LinearLayout card = new LinearLayout(context);
       card.setOrientation(LinearLayout.VERTICAL);
       card.setFocusable(true);
+    card.setDefaultFocusHighlightEnabled(false);
+      card.setFocusableInTouchMode(true);
+      card.setId(View.generateViewId());
       card.setContentDescription("Browse " + genre);
       card.setOnClickListener(v -> loadSearch(genre));
       ImageView picture = new ImageView(context);
@@ -456,7 +430,10 @@ final class RadioController {
       picture.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
       final CardFocusForeground focus = new CardFocusForeground(dp(11));
       picture.setForeground(focus);
-      card.setOnFocusChangeListener((view, focused) -> focus.setFocused(focused));
+      card.setOnFocusChangeListener((view, focused) -> {
+        focus.setFocused(focused);
+        if (focused) rememberCardFocus(view);
+      });
       String filename = "category-" + genre.replace(' ', '-') + ".jpg";
       Bitmap photo = categoryArtwork.get(filename);
       if (photo == null) {
@@ -468,17 +445,19 @@ final class RadioController {
         } catch (Exception ignored) {}
       }
       picture.setImageBitmap(photo);
-      card.addView(picture, new LinearLayout.LayoutParams(dp(142), dp(80)));
-      TextView label = text(14, Color.WHITE);
+      card.addView(picture, new LinearLayout.LayoutParams(dp(CARD_WIDTH_DP), dp(158)));
+      TextView label = text(18, Color.WHITE);
       label.setText(Character.toUpperCase(genre.charAt(0)) + genre.substring(1));
       label.setPadding(dp(2), dp(5), 0, 0);
-      card.addView(label, new LinearLayout.LayoutParams(dp(142), dp(24)));
-      LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(142), dp(104));
-      params.rightMargin = dp(8);
+      card.addView(label, new LinearLayout.LayoutParams(dp(CARD_WIDTH_DP), dp(42)));
+      LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(CARD_WIDTH_DP), dp(CARD_HEIGHT_DP));
+      params.rightMargin = dp(12);
       cards.addView(card, params);
+      focusRow.add(card);
     }
     strip.addView(cards);
-    sections.addView(strip, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(104)));
+    sections.addView(strip, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(CARD_HEIGHT_DP)));
+    if (!focusRow.isEmpty()) focusRows.add(focusRow);
   }
 
   private void addEmptySection(String label, String message) {
@@ -498,16 +477,21 @@ final class RadioController {
     sections.addView(empty, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(37)));
   }
 
-  private View stationCard(final RadioStationPolicy.Station station, int artworkIndex, boolean isFavorite) {
+  private View stationCard(final RadioStationPolicy.Station station) {
     LinearLayout card = new LinearLayout(context);
     card.setOrientation(LinearLayout.VERTICAL);
     card.setFocusable(true);
+    card.setDefaultFocusHighlightEnabled(false);
     card.setFocusableInTouchMode(true);
+    card.setId(View.generateViewId());
     card.setContentDescription("Play " + station.name);
     card.setTag(station.uuid);
     card.setOnClickListener(v -> play(station));
     final CardFocusForeground focusOutline = new CardFocusForeground(dp(11));
-    card.setOnFocusChangeListener((view, focused) -> { focusOutline.setFocused(focused); });
+    card.setOnFocusChangeListener((view, focused) -> {
+      focusOutline.setFocused(focused);
+      if (focused) rememberCardFocus(view);
+    });
     FrameLayout artFrame = new FrameLayout(context);
     artFrame.setBackground(roundRect(dp(11), 0x18ffffff));
     artFrame.setClipToOutline(true);
@@ -515,45 +499,15 @@ final class RadioController {
     artFrame.setForeground(focusOutline);
     ImageView art = new ImageView(context);
     bindStationArtwork(art, station);
-    artFrame.addView(art, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(67)));
-    ImageView heart = new ImageView(context);
-    heart.setPadding(dp(8), dp(8), dp(8), dp(8));
-    heart.setContentDescription((isFavorite ? "Remove " : "Save ") + station.name);
-    setImageIcon(heart, isFavorite ? "heart_filled" : "heart");
-    heart.setColorFilter(isFavorite ? 0xffff375f : Color.WHITE);
-    heart.setBackground(new IconFocusBackground());
-    heart.setFocusable(true);
-    heart.setFocusableInTouchMode(true);
-    heart.setOnFocusChangeListener((view, focused) -> ((IconFocusBackground) view.getBackground()).setFocused(focused));
-    heart.setOnClickListener(v -> {
-      toggleFavorite(station);
-      boolean saved = favoriteIds().contains(station.uuid);
-      setImageIcon(heart, saved ? "heart_filled" : "heart");
-      heart.setColorFilter(saved ? 0xffff375f : Color.WHITE);
-      heart.setContentDescription((saved ? "Remove " : "Save ") + station.name);
-      if (favoritesMode && !saved) { if (favoriteIds().isEmpty()) openBrowse(); else showFavorites(); }
-      else if ("Radio".contentEquals(title.getText())) {
-        showBrowse(new ArrayList<>(browseStations));
-        View restored = sections.findViewWithTag(station.uuid);
-        if (restored != null) restored.requestFocus();
-      }
-    });
-    FrameLayout.LayoutParams heartParams = new FrameLayout.LayoutParams(dp(36), dp(36), Gravity.RIGHT | Gravity.TOP);
-    heartParams.setMargins(0, dp(1), dp(1), 0);
-    artFrame.addView(heart, heartParams);
-    card.addView(artFrame, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(67)));
-    TextView name = text(14, Color.WHITE);
+    artFrame.addView(art, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(158)));
+    card.addView(artFrame, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(158)));
+    TextView name = text(18, Color.WHITE);
     name.setSingleLine(true);
     name.setEllipsize(android.text.TextUtils.TruncateAt.END);
-    name.setPadding(dp(2), dp(5), dp(2), 0);
+    name.setPadding(dp(2), dp(9), dp(2), 0);
     name.setText(station.name);
-    card.addView(name, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(29)));
-    TextView genre = text(10, 0xc1ffffff);
-    genre.setSingleLine(true);
-    genre.setEllipsize(android.text.TextUtils.TruncateAt.END);
-    genre.setPadding(dp(2), 0, dp(2), 0);
-    genre.setText(stationGenre(station));
-    // Station cards use a single clear title; directory tags stay out of the visual hierarchy.
+    card.addView(name, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(42)));
+    // Station cards keep provider imagery edge to edge and one real title outside the artwork.
     return card;
   }
 
@@ -568,13 +522,11 @@ final class RadioController {
     final SearchState state = searchState;
     if (state == null || (!state.namesMore && !state.tagsMore)) return;
     final int request = ++screenGeneration;
-    favoritesMode = false;
     title.setText("Search");
-    subtitle.setText("Results for “" + state.query + "”");
-    updateTabs();
     setStatus(append ? "Loading more stations…" : "Searching eligible stations…");
     if (!append) {
       sections.removeAllViews();
+      focusRows.clear();
       addLoading();
     }
     final RadioDirectory.Cursor nameCursor = copyCursor(state.names);
@@ -601,12 +553,15 @@ final class RadioController {
 
   private void showSearchResults(SearchState state) {
     sections.removeAllViews();
+    focusRows.clear();
     clearStatus();
     playableStations.clear();
     if (state.stations.isEmpty()) addEmptySection("Results", "No eligible stations matched “" + state.query + "”.");
     else {
       // The viewport exposes five cards at once; the horizontal row retains earlier real pages.
       addStationSection("Results", state.stations, state.stations.size());
+      updateCardPlayerRoutes(hasActivePlayerSession());
+      refreshPlayerReturnFocus();
       if (state.namesMore || state.tagsMore) {
         TextView more = action("Load more", null);
         more.setOnClickListener(v -> loadSearchPage(true));
@@ -642,6 +597,7 @@ final class RadioController {
     retryAction = retry;
     setStatus(message);
     sections.removeAllViews();
+    focusRows.clear();
     View spacer = new View(context);
     sections.addView(spacer, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(34)));
     TextView retryView = action("Retry", null);
@@ -690,7 +646,8 @@ final class RadioController {
         main.removeCallbacks(timeout);
         if (activePrepareTimeout == timeout) activePrepareTimeout = null;
         try {
-          updatePlayerVolume(ready, volume.getProgress());
+          // The visible meter is gone, but retain the user's existing saved radio gain.
+          updatePlayerVolume(ready, prefs.getInt(VOLUME_KEY, DEFAULT_VOLUME));
           ready.start();
           paused = false;
           pendingPlayback = false;
@@ -768,17 +725,6 @@ final class RadioController {
   private boolean fresh(int request) { return request == screenGeneration && isOpen(); }
   private void setStatus(String message) { status.setText(message); status.setVisibility(View.VISIBLE); }
   private void clearStatus() { status.setText(""); status.setVisibility(View.GONE); }
-  private void updateTabs() {
-    boolean hasFavorites = !favoriteIds().isEmpty();
-    favoritesTab.setVisibility(hasFavorites ? View.VISIBLE : View.GONE);
-    FrameLayout.LayoutParams rail = (FrameLayout.LayoutParams) sidebar.getLayoutParams();
-    rail.height = dp(hasFavorites ? 151 : 108);
-    sidebar.setLayoutParams(rail);
-    setSelected(browseTab, !favoritesMode && "Radio".contentEquals(title == null ? "" : title.getText()));
-    setSelected(favoritesTab, favoritesMode);
-    setSelected(searchTab, "Search".contentEquals(title == null ? "" : title.getText()));
-  }
-  private void setSelected(TextView view, boolean selected) { ((GlassBackground) view.getBackground()).setSelected(selected); }
   private void updatePlayer() {
     boolean active = player != null;
     boolean ready = active && !pendingPlayback;
@@ -796,10 +742,105 @@ final class RadioController {
     setControlEnabled(pause, ready);
     setControlEnabled(previous, previous.isEnabled());
     setControlEnabled(next, next.isEnabled());
+    boolean saved = playing != null && favoriteIds().contains(playing.uuid);
+    setIcon(playerFavorite, saved ? "heart_filled" : "heart", 18);
+    playerFavorite.setContentDescription(
+        playing == null ? "Save station" : (saved ? "Remove " : "Save ") + playing.name);
+    setControlEnabled(playerFavorite, ready && playing != null);
+    updateCardPlayerRoutes(ready && playing != null);
   }
-  private void setControlEnabled(TextView view, boolean enabled) { view.setFocusable(enabled); view.setAlpha(enabled ? 1f : .42f); }
-  private void updateVolume(int value) { prefs.edit().putInt(VOLUME_KEY, value).apply(); if (player != null) updatePlayerVolume(player, value); }
-  private static void updatePlayerVolume(MediaPlayer value, int volume) { float level = Math.max(0f, Math.min(1f, volume / 100f)); try { value.setVolume(level, level); } catch (Exception ignored) {} }
+  private void setControlEnabled(TextView view, boolean enabled) {
+    view.setEnabled(enabled);
+    view.setFocusable(enabled);
+    view.setAlpha(enabled ? 1f : .42f);
+  }
+
+  private boolean hasActivePlayerSession() { return player != null && !pendingPlayback; }
+
+  private void updateCardPlayerRoutes(boolean playerAvailable) {
+    for (int rowIndex = 0; rowIndex < focusRows.size(); rowIndex++) {
+      ArrayList<View> row = focusRows.get(rowIndex);
+      for (int column = 0; column < row.size(); column++) {
+        View card = row.get(column);
+        if (rowIndex == 0) card.setNextFocusUpId(searchField.getId());
+        else card.setNextFocusUpId(neighbor(focusRows.get(rowIndex - 1), column).getId());
+        if (rowIndex + 1 < focusRows.size())
+          card.setNextFocusDownId(neighbor(focusRows.get(rowIndex + 1), column).getId());
+        else card.setNextFocusDownId(playerAvailable ? playerFavorite.getId() : View.NO_ID);
+      }
+    }
+  }
+
+  private static View neighbor(List<View> row, int column) {
+    return row.get(Math.min(column, row.size() - 1));
+  }
+
+  private void togglePlayingFavorite() {
+    if (playing == null) return;
+    toggleFavorite(playing);
+    updatePlayer();
+    if ("Radio".contentEquals(title.getText()) && !browseStations.isEmpty()) {
+      // Rebuild the saved row immediately while retaining the player's explicit focus target.
+      showBrowse(new ArrayList<>(browseStations));
+      playerFavorite.requestFocus();
+    }
+  }
+
+  private void rememberCardFocus(View card) {
+    playerReturnFocusKey = focusKey(card);
+    setPlayerReturnFocus(card);
+  }
+
+  private void refreshPlayerReturnFocus() {
+    View card = findCardByFocusKey(playerReturnFocusKey);
+    if (card == null) card = firstFocusableCard();
+    if (card != null) setPlayerReturnFocus(card);
+  }
+
+  private void setPlayerReturnFocus(View card) {
+    playerFavorite.setNextFocusUpId(card.getId());
+    previous.setNextFocusUpId(card.getId());
+    pause.setNextFocusUpId(card.getId());
+    next.setNextFocusUpId(card.getId());
+  }
+
+  private static String focusKey(View card) {
+    Object tag = card.getTag();
+    if (tag != null) return "station:" + tag;
+    CharSequence description = card.getContentDescription();
+    return description == null ? null : "description:" + description;
+  }
+
+  private View findCardByFocusKey(String key) {
+    if (key == null) return null;
+    return findCardByFocusKey(sections, key);
+  }
+
+  private View findCardByFocusKey(View view, String key) {
+    if (view != sections && view.isFocusable() && key.equals(focusKey(view))) return view;
+    if (!(view instanceof ViewGroup)) return null;
+    ViewGroup group = (ViewGroup) view;
+    for (int index = 0; index < group.getChildCount(); index++) {
+      View found = findCardByFocusKey(group.getChildAt(index), key);
+      if (found != null) return found;
+    }
+    return null;
+  }
+
+  private View firstFocusableCard() {
+    return firstFocusableCard(sections);
+  }
+
+  private View firstFocusableCard(View view) {
+    if (view != sections && view.isFocusable() && view.getVisibility() == View.VISIBLE) return view;
+    if (!(view instanceof ViewGroup)) return null;
+    ViewGroup group = (ViewGroup) view;
+    for (int index = 0; index < group.getChildCount(); index++) {
+      View found = firstFocusableCard(group.getChildAt(index));
+      if (found != null) return found;
+    }
+    return null;
+  }
 
   private Set<String> favoriteIds() { return new HashSet<>(prefs.getStringSet(FAVORITES_KEY, Collections.<String>emptySet())); }
   private void toggleFavorite(RadioStationPolicy.Station station) {
@@ -813,6 +854,10 @@ final class RadioController {
       records.add(0, station);
     }
     prefs.edit().putStringSet(FAVORITES_KEY, ids).putString(FAVORITE_RECORDS_KEY, encodeStations(records, MAX_FAVORITES)).apply();
+  }
+  private static void updatePlayerVolume(MediaPlayer value, int volume) {
+    float level = Math.max(0f, Math.min(1f, volume / 100f));
+    try { value.setVolume(level, level); } catch (Exception ignored) {}
   }
   private void recordRecent(RadioStationPolicy.Station station) {
     ArrayList<RadioStationPolicy.Station> records = recentStations();
@@ -846,7 +891,6 @@ final class RadioController {
   }
   private static void removeStation(List<RadioStationPolicy.Station> stations, String uuid) { for (int i = stations.size() - 1; i >= 0; i--) if (uuid.equals(stations.get(i).uuid)) stations.remove(i); }
   private static boolean contains(List<RadioStationPolicy.Station> stations, String uuid) { for (RadioStationPolicy.Station station : stations) if (station.uuid.equals(uuid)) return true; return false; }
-  private static String stationGenre(RadioStationPolicy.Station station) { return station.genre.length() == 0 ? (station.country.length() == 0 ? station.bitrate + " kbps" : station.country) : station.genre; }
   private void bindStationArtwork(ImageView view, RadioStationPolicy.Station station) {
     String key = station == null ? "" : station.uuid + ":" + station.artworkUrl;
     if (key.equals(view.getTag())) return;
@@ -869,13 +913,13 @@ final class RadioController {
 
 
   private TextView text(int size, int color) { TextView view = new TextView(context); view.setTextColor(color); view.setTextSize(size); view.setIncludeFontPadding(false); return view; }
-  private TextView sideAction(String label, String icon) { TextView view = action(label, icon); view.setTextSize(14); view.setBackground(new GlassBackground(dp(16), Color.TRANSPARENT)); view.setGravity(Gravity.CENTER_VERTICAL); view.setPadding(dp(12), 0, dp(8), 0); return view; }
   private TextView action(String value, String icon) {
     TextView view = text(12, Color.WHITE);
     view.setText(value);
     view.setGravity(Gravity.CENTER);
     view.setFocusable(true);
     view.setFocusableInTouchMode(true);
+    view.setDefaultFocusHighlightEnabled(false);
     view.setBackground(new GlassBackground(dp(17), 0x3cffffff));
     if (icon != null) setIcon(view, icon, 18);
     view.setOnFocusChangeListener((v, focused) -> { ((GlassBackground) v.getBackground()).setFocused(focused); });
@@ -885,6 +929,7 @@ final class RadioController {
     TextView view = new TransportButton(context);
     view.setFocusable(true);
     view.setFocusableInTouchMode(true);
+    view.setDefaultFocusHighlightEnabled(false);
     view.setGravity(Gravity.CENTER);
     view.setBackground(new GlassBackground(dp(20), Color.TRANSPARENT));
     view.setOnFocusChangeListener((v, focused) -> ((GlassBackground) v.getBackground()).setFocused(focused));
@@ -925,12 +970,11 @@ final class RadioController {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final float radius;
     private final int color;
-    private boolean focused, selected;
+    private boolean focused;
     private final boolean frosted;
     GlassBackground(float radius, int color) { this(radius, color, false); }
     GlassBackground(float radius, int color, boolean frosted) { this.radius = radius; this.color = color; this.frosted = frosted; }
     void setFocused(boolean value) { focused = value; invalidateSelf(); }
-    void setSelected(boolean value) { selected = value; invalidateSelf(); }
     @Override public void draw(Canvas canvas) {
       Rect b = getBounds();
       paint.setStyle(Paint.Style.FILL);
@@ -941,7 +985,7 @@ final class RadioController {
         paint.setColor(0x38000000);
         canvas.drawRoundRect(new RectF(b), radius, radius, paint);
       }
-      paint.setColor(selected ? 0x42ffffff : color);
+      paint.setColor(color);
       canvas.drawRoundRect(new RectF(b), radius, radius, paint);
       paint.setStyle(Paint.Style.STROKE);
       paint.setStrokeWidth(focused ? dp(2) : 1f);
@@ -953,32 +997,24 @@ final class RadioController {
     @Override public void setColorFilter(android.graphics.ColorFilter filter) {}
     @Override public int getOpacity() { return android.graphics.PixelFormat.TRANSLUCENT; }
   }
-  /** Low-cost static tint. It leaves the top-right readable while grounding content on the left. */
-  private static final class RadioBackdropShade extends Drawable {
+  /**
+   * Full-screen frosted source with only neutral white/black tinting. The image or retained video
+   * frame supplies the color, while the low-resolution FrostedBackdrop keeps the layer quiet.
+   */
+  private final class RadioBackdropShade extends Drawable {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     @Override public void draw(Canvas canvas) {
       Rect b = getBounds();
-      paint.setShader(new LinearGradient(b.left, b.top, b.right, b.top, 0x90000000, 0x18000000, Shader.TileMode.CLAMP));
+      if (frostedBackdrop != null && getCallback() instanceof View) {
+        View view = (View) getCallback();
+        frostedBackdrop.registerGlassView(view);
+        frostedBackdrop.draw(canvas, view, new RectF(b), 0f);
+      }
+      paint.setShader(new LinearGradient(b.left, b.top, b.right, b.top, 0x24000000, 0x0dffffff, Shader.TileMode.CLAMP));
       canvas.drawRect(b, paint);
-      paint.setShader(new LinearGradient(b.left, b.top, b.left, b.bottom, 0x05000000, 0x78000000, Shader.TileMode.CLAMP));
+      paint.setShader(new LinearGradient(b.left, b.top, b.left, b.bottom, 0x08ffffff, 0x3b000000, Shader.TileMode.CLAMP));
       canvas.drawRect(b, paint);
       paint.setShader(null);
-    }
-    @Override public void setAlpha(int alpha) {}
-    @Override public void setColorFilter(android.graphics.ColorFilter filter) {}
-    @Override public int getOpacity() { return android.graphics.PixelFormat.TRANSLUCENT; }
-  }
-  private static final class IconFocusBackground extends Drawable {
-    private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private boolean focused;
-    void setFocused(boolean value) { focused = value; invalidateSelf(); }
-    @Override public void draw(Canvas canvas) {
-      if (!focused) return;
-      Rect b = getBounds();
-      paint.setStyle(Paint.Style.STROKE);
-      paint.setStrokeWidth(2.5f);
-      paint.setColor(Color.WHITE);
-      canvas.drawRoundRect(new RectF(b.left + 1, b.top + 1, b.right - 1, b.bottom - 1), 12, 12, paint);
     }
     @Override public void setAlpha(int alpha) {}
     @Override public void setColorFilter(android.graphics.ColorFilter filter) {}
