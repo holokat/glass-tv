@@ -1,6 +1,49 @@
 {
   "package": "@central-icons-react/round-outlined-radius-2-stroke-1.5",
   "icons": {
-    "search": "IconMagnifyingGlass", "weather_cloud": "IconCloudWeather", "arrow_left": "IconArrowLeft", "settings": "IconSettingsGear1", "apps": "IconApps", "tv": "IconTelevision", "radio": "IconRadio", "hdmi": "IconKeyboardCable", "controller": "IconGamepad", "drag_grip": "IconChevronGrabberHorizontal", "stop": "IconStop", "arrow_right": "IconArrowRight", "check": "IconCheckmark1", "wifi": "IconWifiFull", "info": "IconInfoSimple", "movies": "IconVideoRoll", "add": "IconPlusLarge", "close": "IconCrossLarge", "weather_sun": "IconSun", "refresh": "IconArrowPathRight", "image": "IconImages1", "favorite": "IconHeart2", "play": "IconPlay", "weather_moon": "IconMoon", "more_horizontal": "IconDotGrid1x3Horizontal", "weather_rain": "IconRainy", "switch": "IconNintendoSwitch", "weather_send": "IconSend", "upload": "IconArrowUp", "pause": "IconPause", "weather_location": "IconLocation", "folder": "IconFolderOpen"
+    "search": "IconMagnifyingGlass",
+    "weather_cloud": "IconCloudWeather",
+    "arrow_left": "IconArrowLeft",
+    "settings": "IconSettingsGear1",
+    "apps": "IconApps",
+    "tv": "IconTelevision",
+    "radio": "IconRadio",
+    "hdmi": "IconKeyboardCable",
+    "controller": "IconGamepad",
+    "drag_grip": "IconChevronGrabberHorizontal",
+    "stop": "IconStop",
+    "arrow_right": "IconArrowRight",
+    "check": "IconCheckmark1",
+    "wifi": "IconWifiFull",
+    "info": "IconInfoSimple",
+    "movies": "IconVideoRoll",
+    "add": "IconPlusLarge",
+    "close": "IconCrossLarge",
+    "weather_sun": "IconSun",
+    "refresh": "IconArrowPathRight",
+    "image": "IconImages1",
+    "favorite": "IconHeart2",
+    "play": "IconPlay",
+    "weather_moon": "IconMoon",
+    "more_horizontal": "IconDotGrid1x3Horizontal",
+    "weather_rain": "IconRainy",
+    "switch": "IconNintendoSwitch",
+    "weather_send": "IconSend",
+    "upload": "IconArrowUp",
+    "pause": "IconPause",
+    "weather_location": "IconLocation",
+    "folder": "IconFolderOpen",
+    "podcast": "IconPodcast1",
+    "heart": "IconHeart",
+    "heart_filled": {
+      "component": "IconHeart",
+      "package": "@central-icons-react/round-filled-radius-2-stroke-1.5"
+    },
+    "previous": {
+      "component": "IconSkip",
+      "mirror": true
+    },
+    "next": "IconSkip",
+    "volume": "IconVolumeFull"
   }
 }

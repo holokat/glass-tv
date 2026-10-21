@@ -525,7 +525,7 @@ public final class MainActivity extends Activity
   public void suspendAmbientForRadio() {
     ambientSuspendedForRadio = true;
     main.removeCallbacks(rotate);
-    // Preserve the current video frame or photo underneath the transparent Radio screen.
+    // Preserve ambient media in a paused state for restoration after the opaque Radio screen.
     // Radio owns audio; ambient playback must remain silent, including pending preparation.
     if (player != null) {
       try {
@@ -537,9 +537,6 @@ public final class MainActivity extends Activity
         player.setScreenOnWhilePlaying(false);
       } catch (IllegalStateException ignored) {}
     }
-    // Request the direct SurfaceView copy while Radio has not yet added any UI to the window.
-    if (frostedBackdrop != null && activeMedia != null && activeMedia.isVideo())
-      frostedBackdrop.captureVideoNow();
     weather.stop();
     updateLauncherInterfaceVisibility();
   }

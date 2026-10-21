@@ -18,6 +18,7 @@ import android.view.KeyEvent;
 import android.view.PixelCopy;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -28,10 +29,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.text.Editable;
 import android.text.TextWatcher;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -51,10 +49,9 @@ final class RadioSearchOverlay {
 
   private final Context context;
   private final FrameLayout parent;
-  private final RadioArtwork artwork;
+  private final RadioDirectory directory;
   private final Callback callback;
   private final Handler main = new Handler(Looper.getMainLooper());
-  private final RadioDirectory directory = new RadioDirectory();
   private final ThreadPoolExecutor worker = new ThreadPoolExecutor(
       1, 1, 15, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(2),
       new ThreadPoolExecutor.DiscardOldestPolicy());
@@ -71,10 +68,10 @@ final class RadioSearchOverlay {
   private boolean destroyed;
   private Bitmap backdropBitmap;
 
-  RadioSearchOverlay(Context context, FrameLayout parent, RadioArtwork artwork, Callback onStationSelected) {
+  RadioSearchOverlay(Context context, FrameLayout parent, RadioDirectory directory, Callback onStationSelected) {
     this.context = context;
     this.parent = parent;
-    this.artwork = artwork;
+    this.directory = directory;
     this.callback = onStationSelected;
 
     overlay = new FrameLayout(context);
@@ -251,12 +248,9 @@ final class RadioSearchOverlay {
       worker.execute(() -> {
         try {
           if (destroyed || generation != searchGeneration) return;
-          RadioDirectory.Page names = directory.searchByName(value, new RadioDirectory.Cursor());
-          if (destroyed || generation != searchGeneration) return;
-          RadioDirectory.Page tags = directory.searchByTag(value, new RadioDirectory.Cursor());
-          List<RadioStationPolicy.Station> merged = merge(names.stations, tags.stations);
+          List<RadioStationPolicy.Station> matches = directory.searchCatalog(value);
           main.post(() -> {
-            if (currentSearch(generation, value)) showResults(merged);
+            if (currentSearch(generation, value)) showResults(matches);
           });
         } catch (Exception failure) {
           main.post(() -> {
@@ -271,23 +265,6 @@ final class RadioSearchOverlay {
 
   private boolean currentSearch(int generation, String value) {
     return !destroyed && isOpen() && generation == searchGeneration && value.equals(query.getText().toString().trim());
-  }
-
-  private List<RadioStationPolicy.Station> merge(
-      List<RadioStationPolicy.Station> names, List<RadioStationPolicy.Station> tags) {
-    ArrayList<RadioStationPolicy.Station> result = new ArrayList<>();
-    Set<String> seen = new HashSet<>();
-    addUnique(result, seen, names);
-    addUnique(result, seen, tags);
-    return result;
-  }
-
-  private void addUnique(List<RadioStationPolicy.Station> into, Set<String> seen,
-      List<RadioStationPolicy.Station> source) {
-    for (RadioStationPolicy.Station station : source) {
-      if (seen.add(station.uuid)) into.add(station);
-      if (into.size() == MAX_RESULTS) return;
-    }
   }
 
   private void showResults(List<RadioStationPolicy.Station> values) {
@@ -316,17 +293,10 @@ final class RadioSearchOverlay {
     ImageView logo = new ImageView(context);
     logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
     logo.setBackground(new WhiteSurface(dp(10), 0x40ffffff));
-    logo.setTag(station.uuid + ":" + station.artworkUrl);
-    setImageIcon(logo, "podcast");
-    logo.setAlpha(.4f);
-    if (artwork != null) artwork.load(station, (loaded, bitmap) -> {
-      String key = loaded.uuid + ":" + loaded.artworkUrl;
-      if (!key.equals(logo.getTag()) || bitmap == null) return;
-      logo.clearColorFilter();
-      logo.setImageBitmap(bitmap);
-      logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
-      logo.setAlpha(1f);
-    });
+    logo.setImageDrawable(RadioStationGradient.forStation(station, dp(10)));
+    logo.setClipToOutline(true);
+    logo.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+    logo.setAlpha(1f);
     LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(dp(58), dp(58));
     logoParams.leftMargin = dp(8);
     row.addView(logo, logoParams);
@@ -367,7 +337,7 @@ final class RadioSearchOverlay {
     Bitmap sampled = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
     PixelCopy.request(window, sampled, result -> {
       if (result == PixelCopy.SUCCESS) {
-        blurOffUi(composeWithMedia(sampled), generation);
+        blurOffUi(sampled, generation);
         reveal(generation);
       }
       else {
@@ -385,29 +355,8 @@ final class RadioSearchOverlay {
     Canvas canvas = new Canvas(snapshot);
     canvas.scale(width / (float) parent.getWidth(), height / (float) parent.getHeight());
     parent.draw(canvas);
-    blurOffUi(composeWithMedia(snapshot), generation);
+    blurOffUi(snapshot, generation);
     reveal(generation);
-  }
-
-  private Bitmap composeWithMedia(Bitmap foreground) {
-    // Window PixelCopy leaves SurfaceView video transparent. Composite the background-only
-    // media sample first so the blur is opaque and cannot double the sharp UI underneath.
-    Bitmap composite = Bitmap.createBitmap(foreground.getWidth(), foreground.getHeight(), Bitmap.Config.ARGB_8888);
-    Canvas canvas = new Canvas(composite);
-    canvas.drawColor(Color.BLACK);
-    Activity activity = activityContext(context);
-    if (activity instanceof MainActivity && parent.getWidth() > 0 && parent.getHeight() > 0) {
-      FrostedBackdrop frost = ((MainActivity) activity).getFrostedBackdrop();
-      if (frost != null) {
-        canvas.save();
-        canvas.scale(composite.getWidth() / (float) parent.getWidth(), composite.getHeight() / (float) parent.getHeight());
-        frost.draw(canvas, parent, new RectF(0, 0, parent.getWidth(), parent.getHeight()), 0);
-        canvas.restore();
-      }
-    }
-    canvas.drawBitmap(foreground, 0, 0, null);
-    foreground.recycle();
-    return composite;
   }
 
   private void blurOffUi(final Bitmap source, final int generation) {

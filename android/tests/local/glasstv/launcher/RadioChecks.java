@@ -52,6 +52,10 @@ public final class RadioChecks {
             && ordered.get(2).bitrate == 256
             && ordered.get(3).bitrate == 192,
         "320-first ranking and de-duplication");
+    RadioStationPolicy.Station paletteStation = station("55555555-5555-5555-5555-555555555555", "Original name", 320);
+    RadioStationPolicy.Station refreshedPaletteStation = station("55555555-5555-5555-5555-555555555555", "Refreshed name", 320);
+    check(RadioStationGradient.paletteFor(paletteStation).sameAs(RadioStationGradient.paletteFor(refreshedPaletteStation)),
+        "station UUID keeps the deterministic palette stable across provider display-name refreshes");
     JSONObject defaults = AppsSettings.validate(new JSONObject());
     check(
         defaults.getBoolean("netflixEnabled")

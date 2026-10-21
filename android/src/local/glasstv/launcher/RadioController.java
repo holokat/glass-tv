@@ -2,13 +2,9 @@ package local.glasstv.launcher;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.LinearGradient;
-import android.graphics.Shader;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
@@ -31,13 +27,10 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -47,7 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/** Native TV Radio Browser surface. It displays only live directory results and saved history. */
+/** Native TV Radio surface for the bundled, curated catalog and saved history. */
 final class RadioController {
   interface Host {
     void suspendAmbientForRadio();
@@ -66,17 +59,21 @@ final class RadioController {
   private static final int DEFAULT_VOLUME = 70;
   private final Context context;
   private final Host host;
-  private final FrostedBackdrop frostedBackdrop;
   private final Handler main = new Handler(Looper.getMainLooper());
   private final ExecutorService network = Executors.newSingleThreadExecutor();
   private final SharedPreferences prefs;
-  private final RadioDirectory directory = new RadioDirectory();
+  private final RadioDirectory directory;
   private final AudioManager audio;
   private final AudioManager.OnAudioFocusChangeListener audioFocus = this::onAudioFocusChanged;
   private final FrameLayout overlay;
-  private final ImageView backdrop;
-  private static final int CARD_WIDTH_DP = 284;
-  private static final int CARD_HEIGHT_DP = 200;
+  private final View backdrop;
+  private final RadioBackdropDrawable radioBackdrop;
+  private static final int CARD_WIDTH_DP = 168;
+  private static final int CARD_IMAGE_DP = 94;
+  private static final int CARD_LABEL_DP = 42;
+  private static final int CARD_HEIGHT_DP = CARD_IMAGE_DP + CARD_LABEL_DP;
+  private static final int CATEGORY_IMAGE_DP = 168;
+  private static final int CATEGORY_LABEL_DP = 39;
 
   private final TextView searchField, title, status;
   private final LinearLayout sections;
@@ -86,8 +83,8 @@ final class RadioController {
   private final LinearLayout content;
   private final RadioSearchOverlay searchOverlay;
   private final ArrayList<RadioStationPolicy.Station> browseStations = new ArrayList<>();
-  private final RadioArtwork stationArtwork = new RadioArtwork();
-  private final Map<String, Bitmap> categoryArtwork = new HashMap<>();
+  private final RadioCategoryArtwork categoryArtwork;
+  private final ArrayList<CategoryStrip> categoryStrips = new ArrayList<>();
   private final ArrayList<RadioStationPolicy.Station> playableStations = new ArrayList<>();
   private final ArrayList<ArrayList<View>> focusRows = new ArrayList<>();
   private SearchState searchState;
@@ -112,35 +109,38 @@ final class RadioController {
   RadioController(Context context, Host host, FrameLayout parent) {
     this.context = context;
     this.host = host;
-    frostedBackdrop = context instanceof MainActivity ? ((MainActivity) context).getFrostedBackdrop() : null;
+    directory = new RadioDirectory(context);
+    categoryArtwork = new RadioCategoryArtwork(context);
     prefs = context.getSharedPreferences("glass-tv-radio", Context.MODE_PRIVATE);
     audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
     overlay = new FrameLayout(context);
-    // The host continues to render its current scenic background beneath Radio.
-    overlay.setBackgroundColor(Color.TRANSPARENT);
+    // Radio is intentionally opaque: its own ambient surface must never reveal or sample Home media.
+    overlay.setBackgroundColor(Color.BLACK);
     overlay.setVisibility(View.GONE);
     overlay.setFocusable(true);
-    backdrop = new ImageView(context);
-    backdrop.setScaleType(ImageView.ScaleType.CENTER_CROP);
-    backdrop.setVisibility(View.GONE);
+    radioBackdrop = new RadioBackdropDrawable();
+    backdrop = new View(context);
+    backdrop.setBackground(radioBackdrop);
+    backdrop.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
     overlay.addView(backdrop, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-    View shade = new View(context);
-    shade.setBackground(new RadioBackdropShade());
-    shade.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-    overlay.addView(shade, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
     content = new LinearLayout(context);
     content.setOrientation(LinearLayout.VERTICAL);
     FrameLayout.LayoutParams contentParams = new FrameLayout.LayoutParams(dp(912), dp(494), Gravity.LEFT | Gravity.TOP);
     contentParams.setMargins(dp(24), dp(22), 0, 0);
     overlay.addView(content, contentParams);
+    LinearLayout header = new LinearLayout(context);
+    header.setOrientation(LinearLayout.HORIZONTAL);
+    header.setGravity(Gravity.CENTER_VERTICAL);
+    content.addView(header, new LinearLayout.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT, dp(52)));
     title = text(40, Color.WHITE);
     title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
     title.setText("Radio");
-    content.addView(title, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)));
+    header.addView(title, new LinearLayout.LayoutParams(0, dp(52), 1f));
     searchField = action("Search stations or genres", "search");
-    searchField.setBackground(new GlassBackground(dp(20), 0x28ffffff, true));
+    searchField.setBackground(new GlassBackground(dp(20), 0x28ffffff));
     searchField.setGravity(Gravity.CENTER_VERTICAL);
     searchField.setPadding(dp(17), 0, dp(18), 0);
     searchField.setTextColor(0xd9ffffff);
@@ -159,15 +159,14 @@ final class RadioController {
       }
       return false;
     });
-    LinearLayout.LayoutParams searchParams = new LinearLayout.LayoutParams(dp(424), dp(40));
-    searchParams.setMargins(0, dp(12), 0, dp(20));
-    content.addView(searchField, searchParams);
+    header.addView(searchField, new LinearLayout.LayoutParams(dp(424), dp(40)));
     status = text(13, 0xbfffffff);
     status.setSingleLine(true);
     status.setVisibility(View.GONE);
-    FrameLayout.LayoutParams statusParams = new FrameLayout.LayoutParams(dp(912), dp(22), Gravity.LEFT | Gravity.TOP);
-    statusParams.setMargins(dp(24), dp(138), 0, 0);
-    overlay.addView(status, statusParams);
+    // Keep transient loading and playback errors in the vertical flow. A floating status line
+    // would otherwise sit over the first section heading after the compact shared header.
+    content.addView(status, new LinearLayout.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT, dp(22)));
     ScrollView scroll = new ScrollView(context);
     scroll.setFillViewport(true);
     scroll.setClipToPadding(false);
@@ -175,11 +174,14 @@ final class RadioController {
     sections.setOrientation(LinearLayout.VERTICAL);
     scroll.addView(sections, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
     content.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+    scroll.setOnScrollChangeListener((view, left, top, oldLeft, oldTop) -> refreshCategoryArtwork());
 
     playerBar = new FrameLayout(context);
-    playerBar.setBackground(new GlassBackground(dp(26), 0x25ffffff, true));
-    FrameLayout.LayoutParams playerParams = new FrameLayout.LayoutParams(dp(936), dp(61), Gravity.LEFT | Gravity.TOP);
-    playerParams.setMargins(dp(12), dp(475), 0, 0);
+    playerBar.setBackground(new GlassBackground(dp(26), 0x25ffffff));
+    FrameLayout.LayoutParams playerParams = new FrameLayout.LayoutParams(dp(936), dp(61), Gravity.LEFT | Gravity.BOTTOM);
+    // The launcher can reserve a small system inset at the bottom. Anchoring to the visible
+    // surface keeps the transport and its favorite control entirely reachable on TV.
+    playerParams.setMargins(dp(12), 0, 0, dp(10));
     overlay.addView(playerBar, playerParams);
     playerArtwork = new ImageView(context);
     playerArtwork.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -224,6 +226,7 @@ final class RadioController {
     controlsParams.setMargins(dp(396), dp(2), 0, 0);
     playerBar.addView(controls, controlsParams);
     playerFavorite = iconAction("Save station", "heart");
+    playerFavorite.setBackground(new GlassBackground(dp(24), 0x25ffffff));
     playerFavorite.setId(View.generateViewId());
     playerFavorite.setOnClickListener(v -> togglePlayingFavorite());
     FrameLayout.LayoutParams favoriteParams = new FrameLayout.LayoutParams(dp(48), dp(48), Gravity.RIGHT | Gravity.TOP);
@@ -232,7 +235,7 @@ final class RadioController {
     next.setNextFocusRightId(playerFavorite.getId());
     playerFavorite.setNextFocusLeftId(next.getId());
     updatePlayer();
-    searchOverlay = new RadioSearchOverlay(context, overlay, stationArtwork, this::play);
+    searchOverlay = new RadioSearchOverlay(context, overlay, directory, this::play);
     parent.addView(overlay, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
   }
 
@@ -246,17 +249,6 @@ final class RadioController {
   }
 
   boolean isOpen() { return overlay.getVisibility() == View.VISIBLE; }
-
-  /** Optional host snapshot for a stable radio backdrop when the live media surface is paused. */
-  void setBackdrop(Bitmap bitmap) {
-    if (Looper.myLooper() == Looper.getMainLooper()) setBackdropOnMain(bitmap);
-    else main.post(() -> setBackdropOnMain(bitmap));
-  }
-
-  private void setBackdropOnMain(Bitmap bitmap) {
-    backdrop.setImageBitmap(bitmap);
-    backdrop.setVisibility(bitmap == null ? View.GONE : View.VISIBLE);
-  }
 
   boolean handleKey(int key) {
     if (!isOpen()) return false;
@@ -275,15 +267,16 @@ final class RadioController {
   }
 
   void onHostStopped() { closeInternal(false); }
-  void destroy() { closeInternal(false); network.shutdownNow(); searchOverlay.destroy(); stationArtwork.close(); }
+  void destroy() { closeInternal(false); network.shutdownNow(); searchOverlay.destroy(); categoryArtwork.close(); }
   private void close() { closeInternal(true); }
 
   private void closeInternal(boolean restore) {
     screenGeneration++;
     searchOverlay.dismissImmediately();
     stopPlayback();
+    radioBackdrop.cancelAnimation();
+    radioBackdrop.showIdle(false);
     if (isOpen()) overlay.setVisibility(View.GONE);
-    setBackdropOnMain(null);
     if (restore) host.restoreAmbientAfterRadio();
   }
 
@@ -295,16 +288,15 @@ final class RadioController {
 
   private void loadBrowse() {
     final int request = ++screenGeneration;
-    setStatus("Loading popular stations from Radio Browser…");
-    sections.removeAllViews();
-    focusRows.clear();
+    setStatus("Loading popular stations…");
+    clearSections();
     addLoading();
     network.execute(() -> {
       try {
         RadioDirectory.Page popular = directory.popular(new RadioDirectory.Cursor());
         main.post(() -> { if (fresh(request)) showBrowse(popular.stations); });
       } catch (Exception failure) {
-        main.post(() -> { if (fresh(request)) showRetry("Radio directory is unavailable. Check the connection and retry.", this::loadBrowse); });
+        main.post(() -> { if (fresh(request)) showRetry("The Radio catalog could not be loaded.", this::loadBrowse); });
       }
     });
   }
@@ -312,8 +304,7 @@ final class RadioController {
   private void showBrowse(List<RadioStationPolicy.Station> popular) {
     View focusedCard = sections.findFocus();
     String focusedKey = focusedCard == null ? null : focusKey(focusedCard);
-    sections.removeAllViews();
-    focusRows.clear();
+    clearSections();
     clearStatus();
     playableStations.clear();
     List<RadioStationPolicy.Station> recent = recentStations();
@@ -338,11 +329,22 @@ final class RadioController {
       List<RadioStationPolicy.Station> popular) {
     if (!recent.isEmpty()) addStationSection("Recent", recent);
     if (!favorites.isEmpty()) addStationSection("Favorites", favorites);
-    if (popular.isEmpty()) addEmptySection("Popular", "No eligible popular stations were found.");
-    else addStationSection("Popular", popular);
-    addGenreSection();
+    if (popular.isEmpty()) addEmptySection("Featured stations", "No eligible featured stations were found.");
+    else addStationSection("Featured stations", popular);
+    addCategorySection("Genres", categories("genre"), 0);
+    addCategorySection("Styles", categories("style"), 0);
+    addCategorySection("Moods", categories("mood"), 0);
     updateCardPlayerRoutes(hasActivePlayerSession());
     refreshPlayerReturnFocus();
+  }
+
+  private List<RadioDirectory.Category> categories(String type) {
+    try {
+      return directory.categories(type);
+    } catch (Exception failure) {
+      setStatus("The Radio catalog categories could not be loaded.");
+      return Collections.emptyList();
+    }
   }
 
   /** Migrates UUID-only saves into the real metadata cards used by the sidebar-free browse view. */
@@ -361,7 +363,7 @@ final class RadioController {
       } catch (Exception failure) {
         main.post(() -> {
           if (fresh(request))
-            setStatus("Saved stations could not be refreshed while offline.");
+            setStatus("Saved stations could not be refreshed from this catalog.");
         });
       }
     });
@@ -403,61 +405,165 @@ final class RadioController {
     if (!focusRow.isEmpty()) focusRows.add(focusRow);
   }
 
-  private void addGenreSection() {
+  private void addCategorySection(
+      String headingLabel, List<RadioDirectory.Category> categories, int maximumCards) {
+    if (categories == null || categories.isEmpty()) return;
     TextView heading = text(22, Color.WHITE);
     heading.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-    heading.setText("Genres");
+    heading.setText(headingLabel);
     LinearLayout.LayoutParams header = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(34));
     header.topMargin = dp(16);
     sections.addView(heading, header);
-    HorizontalScrollView strip = new HorizontalScrollView(context);
+    CategoryStrip strip = new CategoryStrip(context);
     strip.setHorizontalScrollBarEnabled(false);
+    strip.setClipToPadding(false);
+    categoryStrips.add(strip);
     LinearLayout cards = new LinearLayout(context);
     ArrayList<View> focusRow = new ArrayList<>();
-    for (String genre : directory.musicGenres()) {
+    int limit = maximumCards > 0 ? Math.min(maximumCards, categories.size()) : categories.size();
+    for (int index = 0; index < limit; index++) {
+      RadioDirectory.Category category = categories.get(index);
       LinearLayout card = new LinearLayout(context);
       card.setOrientation(LinearLayout.VERTICAL);
       card.setFocusable(true);
-    card.setDefaultFocusHighlightEnabled(false);
+      card.setDefaultFocusHighlightEnabled(false);
       card.setFocusableInTouchMode(true);
       card.setId(View.generateViewId());
-      card.setContentDescription("Browse " + genre);
-      card.setOnClickListener(v -> loadSearch(genre));
+      card.setContentDescription("Browse " + category.label);
+      card.setTag("category:" + category.id);
+      card.setOnClickListener(v -> loadCategory(category));
       ImageView picture = new ImageView(context);
       picture.setScaleType(ImageView.ScaleType.CENTER_CROP);
-      picture.setBackground(roundRect(dp(11), 0x18ffffff));
+      picture.setBackground(roundRect(dp(14), 0x18ffffff));
       picture.setClipToOutline(true);
       picture.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
-      final CardFocusForeground focus = new CardFocusForeground(dp(11));
+      final CardFocusForeground focus = new CardFocusForeground(dp(14));
       picture.setForeground(focus);
       card.setOnFocusChangeListener((view, focused) -> {
         focus.setFocused(focused);
         if (focused) rememberCardFocus(view);
       });
-      String filename = "category-" + genre.replace(' ', '-') + ".jpg";
-      Bitmap photo = categoryArtwork.get(filename);
-      if (photo == null) {
-        try (InputStream input = context.getAssets().open("radio-artwork/" + filename)) {
-          BitmapFactory.Options options = new BitmapFactory.Options();
-          options.inSampleSize = 2;
-          photo = BitmapFactory.decodeStream(input, null, options);
-          categoryArtwork.put(filename, photo);
-        } catch (Exception ignored) {}
-      }
-      picture.setImageBitmap(photo);
-      card.addView(picture, new LinearLayout.LayoutParams(dp(CARD_WIDTH_DP), dp(158)));
+      strip.addArtwork(picture, category.artworkIndex);
+      card.addView(picture, new LinearLayout.LayoutParams(dp(CATEGORY_IMAGE_DP), dp(CATEGORY_IMAGE_DP)));
       TextView label = text(18, Color.WHITE);
-      label.setText(Character.toUpperCase(genre.charAt(0)) + genre.substring(1));
+      label.setSingleLine(true);
+      label.setEllipsize(android.text.TextUtils.TruncateAt.END);
+      label.setText(category.label);
       label.setPadding(dp(2), dp(5), 0, 0);
-      card.addView(label, new LinearLayout.LayoutParams(dp(CARD_WIDTH_DP), dp(42)));
-      LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(CARD_WIDTH_DP), dp(CARD_HEIGHT_DP));
+      card.addView(label, new LinearLayout.LayoutParams(dp(CATEGORY_IMAGE_DP), dp(CATEGORY_LABEL_DP)));
+      LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+          dp(CATEGORY_IMAGE_DP), dp(CATEGORY_IMAGE_DP + CATEGORY_LABEL_DP));
       params.rightMargin = dp(12);
       cards.addView(card, params);
       focusRow.add(card);
     }
     strip.addView(cards);
-    sections.addView(strip, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(CARD_HEIGHT_DP)));
+    sections.addView(strip, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+        dp(CATEGORY_IMAGE_DP + CATEGORY_LABEL_DP)));
     if (!focusRow.isEmpty()) focusRows.add(focusRow);
+  }
+
+  private void refreshCategoryArtwork() {
+    for (CategoryStrip strip : categoryStrips) strip.refreshArtwork();
+  }
+
+  private void clearSections() {
+    for (CategoryStrip strip : categoryStrips) strip.releaseArtwork();
+    categoryStrips.clear();
+    sections.removeAllViews();
+    focusRows.clear();
+  }
+
+  /**
+   * Cards remain attached while a HorizontalScrollView or its parent vertical scroll view moves.
+   * Bind only the cards that Android reports as clipped-visible and discard their ImageView bitmap
+   * once they leave that clipped region; the bounded loader cache retains just recent tiles.
+   */
+  private final class CategoryStrip extends HorizontalScrollView {
+    private final ArrayList<CategoryArtworkTarget> targets = new ArrayList<>();
+    private final Rect visibleBounds = new Rect();
+
+    CategoryStrip(Context context) { super(context); }
+
+    void addArtwork(ImageView view, int artworkIndex) {
+      targets.add(new CategoryArtworkTarget(view, artworkIndex));
+    }
+
+    void refreshArtwork() {
+      if (!isAttachedToWindow() || !isShown()) return;
+      for (CategoryArtworkTarget target : targets) {
+        boolean visible = target.view.isShown() && target.view.getWidth() > 0
+            && target.view.getGlobalVisibleRect(visibleBounds);
+        if (!visible) {
+          target.release();
+          continue;
+        }
+        target.request();
+      }
+    }
+
+    void releaseArtwork() { for (CategoryArtworkTarget target : targets) target.release(); }
+
+    @Override protected void onAttachedToWindow() {
+      super.onAttachedToWindow();
+      post(this::refreshArtwork);
+    }
+
+    @Override protected void onDetachedFromWindow() {
+      releaseArtwork();
+      super.onDetachedFromWindow();
+    }
+
+    @Override protected void onScrollChanged(int left, int top, int oldLeft, int oldTop) {
+      super.onScrollChanged(left, top, oldLeft, oldTop);
+      refreshArtwork();
+    }
+
+    @Override protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+      super.onLayout(changed, left, top, right, bottom);
+      if (changed) refreshArtwork();
+    }
+  }
+
+  private final class CategoryArtworkTarget {
+    final ImageView view;
+    final int artworkIndex;
+    final String key;
+    boolean requested;
+    boolean failed;
+
+    CategoryArtworkTarget(ImageView view, int artworkIndex) {
+      this.view = view;
+      this.artworkIndex = artworkIndex;
+      key = "category:" + artworkIndex;
+    }
+
+    void request() {
+      if (!key.equals(view.getTag())) {
+        view.setTag(key);
+        requested = false;
+        failed = false;
+      }
+      if (requested || failed || view.getDrawable() != null) return;
+      requested = true;
+      categoryArtwork.load(artworkIndex, dp(CATEGORY_IMAGE_DP), (loadedIndex, bitmap) -> {
+        requested = false;
+        if (!key.equals(view.getTag())) return;
+        if (bitmap == null) {
+          failed = true;
+          return;
+        }
+        view.setImageBitmap(bitmap);
+      });
+    }
+
+    void release() {
+      if (view.getTag() == null && view.getDrawable() == null) return;
+      view.setTag(null);
+      view.setImageDrawable(null);
+      requested = false;
+      failed = false;
+    }
   }
 
   private void addEmptySection(String label, String message) {
@@ -499,19 +605,55 @@ final class RadioController {
     artFrame.setForeground(focusOutline);
     ImageView art = new ImageView(context);
     bindStationArtwork(art, station);
-    artFrame.addView(art, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(158)));
-    card.addView(artFrame, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(158)));
+    artFrame.addView(art, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(CARD_IMAGE_DP)));
+    card.addView(artFrame, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(CARD_IMAGE_DP)));
     TextView name = text(18, Color.WHITE);
     name.setSingleLine(true);
     name.setEllipsize(android.text.TextUtils.TruncateAt.END);
     name.setPadding(dp(2), dp(9), dp(2), 0);
     name.setText(station.name);
-    card.addView(name, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(42)));
-    // Station cards keep provider imagery edge to edge and one real title outside the artwork.
+    card.addView(name, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(CARD_LABEL_DP)));
+    // Station cards keep deterministic gradient art edge to edge and one real title outside it.
     return card;
   }
 
   private void showSearch() { searchOverlay.show(); }
+
+  /** Category cards resolve only their exact curated membership, never a broad text match. */
+  private void loadCategory(final RadioDirectory.Category category) {
+    searchState = new SearchState(category.id);
+    final int request = ++screenGeneration;
+    title.setText(category.label);
+    setStatus("Loading " + category.label + "…");
+    clearSections();
+    addLoading();
+    network.execute(() -> {
+      try {
+        RadioDirectory.Page page = directory.browseGenre(category.id, new RadioDirectory.Cursor());
+        main.post(() -> {
+          if (!fresh(request) || searchState == null || !category.id.equals(searchState.query)) return;
+          clearSections();
+          clearStatus();
+          playableStations.clear();
+          if (page.stations.isEmpty()) addEmptySection(category.label,
+              "No eligible stations are in this category.");
+          else {
+            // A category is a compact, horizontal browse result. The directory can page up to
+            // twelve records, while the editorial catalog keeps each category meaningful at
+            // five to ten cards.
+            addStationSection(category.label, page.stations, Math.min(10, page.stations.size()));
+            updateCardPlayerRoutes(hasActivePlayerSession());
+            refreshPlayerReturnFocus();
+          }
+        });
+      } catch (Exception failure) {
+        main.post(() -> {
+          if (fresh(request) && searchState != null && category.id.equals(searchState.query))
+            showRetry("This category could not be loaded.", () -> loadCategory(category));
+        });
+      }
+    });
+  }
 
   private void loadSearch(final String query) {
     searchState = new SearchState(query);
@@ -525,8 +667,7 @@ final class RadioController {
     title.setText("Search");
     setStatus(append ? "Loading more stations…" : "Searching eligible stations…");
     if (!append) {
-      sections.removeAllViews();
-      focusRows.clear();
+      clearSections();
       addLoading();
     }
     final RadioDirectory.Cursor nameCursor = copyCursor(state.names);
@@ -552,8 +693,7 @@ final class RadioController {
   }
 
   private void showSearchResults(SearchState state) {
-    sections.removeAllViews();
-    focusRows.clear();
+    clearSections();
     clearStatus();
     playableStations.clear();
     if (state.stations.isEmpty()) addEmptySection("Results", "No eligible stations matched “" + state.query + "”.");
@@ -596,8 +736,7 @@ final class RadioController {
   private void showRetry(String message, Runnable retry) {
     retryAction = retry;
     setStatus(message);
-    sections.removeAllViews();
-    focusRows.clear();
+    clearSections();
     View spacer = new View(context);
     sections.addView(spacer, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(34)));
     TextView retryView = action("Retry", null);
@@ -606,7 +745,8 @@ final class RadioController {
   }
 
   private void play(final RadioStationPolicy.Station wanted) {
-    stopPlayback();
+    // Keep the prior palette through validation so a failed recheck returns cleanly to idle.
+    stopPlayback(false);
     final int token = ++playbackGeneration;
     pendingPlayback = true;
     setStatus("Rechecking “" + wanted.name + "”…");
@@ -620,7 +760,7 @@ final class RadioController {
         if (!RadioDirectory.safePlaybackUrl(station.url)) throw new IllegalStateException("unsafe URL");
         main.post(() -> { if (token == playbackGeneration && isOpen()) startPlayback(station, token); });
       } catch (Exception failure) {
-        main.post(() -> { if (token == playbackGeneration && isOpen()) { pendingPlayback = false; setStatus("This station is no longer stream checked."); updatePlayer(); } });
+        main.post(() -> { if (token == playbackGeneration && isOpen()) { pendingPlayback = false; radioBackdrop.showIdle(true); setStatus("This station is no longer stream checked."); updatePlayer(); } });
       }
     });
   }
@@ -630,6 +770,7 @@ final class RadioController {
     if (!host.isRadioHostForeground() || token != playbackGeneration) return;
     if (audio.requestAudioFocus(audioFocus, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
       pendingPlayback = false;
+      radioBackdrop.showIdle(true);
       setStatus("Radio playback could not take audio focus.");
       updatePlayer();
       return;
@@ -652,6 +793,8 @@ final class RadioController {
           paused = false;
           pendingPlayback = false;
           playing = station;
+          // A stale prepare callback cannot reach here because token/player are verified above.
+          radioBackdrop.showStation(station, true);
           recordRecent(station);
           if ("Radio".contentEquals(title.getText())) showBrowse(new ArrayList<>(browseStations));
           clearStatus();
@@ -687,13 +830,15 @@ final class RadioController {
     try { player.start(); paused = false; clearStatus(); updatePlayer(); }
     catch (Exception failure) { stopPlayback(); setStatus("Radio playback stopped."); }
   }
-  private void stopPlayback() {
+  private void stopPlayback() { stopPlayback(true); }
+  private void stopPlayback(boolean returnToIdle) {
     playbackGeneration++;
     if (activePrepareTimeout != null) { main.removeCallbacks(activePrepareTimeout); activePrepareTimeout = null; }
     stopPlayerOnly();
     audio.abandonAudioFocus(audioFocus);
     paused = false;
     pendingPlayback = false;
+    if (returnToIdle) radioBackdrop.showIdle(isOpen());
     updatePlayer();
   }
   private void stopPlayerOnly() { MediaPlayer old = player; player = null; playing = null; if (old != null) release(old); }
@@ -892,23 +1037,13 @@ final class RadioController {
   private static void removeStation(List<RadioStationPolicy.Station> stations, String uuid) { for (int i = stations.size() - 1; i >= 0; i--) if (uuid.equals(stations.get(i).uuid)) stations.remove(i); }
   private static boolean contains(List<RadioStationPolicy.Station> stations, String uuid) { for (RadioStationPolicy.Station station : stations) if (station.uuid.equals(uuid)) return true; return false; }
   private void bindStationArtwork(ImageView view, RadioStationPolicy.Station station) {
-    String key = station == null ? "" : station.uuid + ":" + station.artworkUrl;
+    String key = station == null ? "" : station.uuid;
     if (key.equals(view.getTag())) return;
     view.setTag(key);
     view.setScaleType(ImageView.ScaleType.CENTER_CROP);
     view.setPadding(0, 0, 0, 0);
-    view.setImageDrawable(null);
-    if (station == null) return;
-    setImageIcon(view, "podcast");
-    view.setAlpha(.35f);
-    stationArtwork.load(station, (loaded, bitmap) -> {
-      if (!key.equals(view.getTag())) return;
-      if (bitmap != null) {
-        view.setImageBitmap(bitmap);
-        view.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        view.setAlpha(1f);
-      }
-    });
+    view.setImageDrawable(RadioStationGradient.forStation(station));
+    view.setAlpha(1f);
   }
 
 
@@ -971,20 +1106,11 @@ final class RadioController {
     private final float radius;
     private final int color;
     private boolean focused;
-    private final boolean frosted;
-    GlassBackground(float radius, int color) { this(radius, color, false); }
-    GlassBackground(float radius, int color, boolean frosted) { this.radius = radius; this.color = color; this.frosted = frosted; }
+    GlassBackground(float radius, int color) { this.radius = radius; this.color = color; }
     void setFocused(boolean value) { focused = value; invalidateSelf(); }
     @Override public void draw(Canvas canvas) {
       Rect b = getBounds();
       paint.setStyle(Paint.Style.FILL);
-      if (frosted && frostedBackdrop != null && getCallback() instanceof View) {
-        View view = (View) getCallback();
-        frostedBackdrop.registerGlassView(view);
-        frostedBackdrop.draw(canvas, view, new RectF(b), radius);
-        paint.setColor(0x38000000);
-        canvas.drawRoundRect(new RectF(b), radius, radius, paint);
-      }
       paint.setColor(color);
       canvas.drawRoundRect(new RectF(b), radius, radius, paint);
       paint.setStyle(Paint.Style.STROKE);
@@ -992,29 +1118,6 @@ final class RadioController {
       paint.setColor(focused ? Color.WHITE : color == Color.TRANSPARENT ? Color.TRANSPARENT : 0x25ffffff);
       float inset = paint.getStrokeWidth() / 2f;
       canvas.drawRoundRect(new RectF(b.left + inset, b.top + inset, b.right - inset, b.bottom - inset), radius, radius, paint);
-    }
-    @Override public void setAlpha(int alpha) {}
-    @Override public void setColorFilter(android.graphics.ColorFilter filter) {}
-    @Override public int getOpacity() { return android.graphics.PixelFormat.TRANSLUCENT; }
-  }
-  /**
-   * Full-screen frosted source with only neutral white/black tinting. The image or retained video
-   * frame supplies the color, while the low-resolution FrostedBackdrop keeps the layer quiet.
-   */
-  private final class RadioBackdropShade extends Drawable {
-    private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    @Override public void draw(Canvas canvas) {
-      Rect b = getBounds();
-      if (frostedBackdrop != null && getCallback() instanceof View) {
-        View view = (View) getCallback();
-        frostedBackdrop.registerGlassView(view);
-        frostedBackdrop.draw(canvas, view, new RectF(b), 0f);
-      }
-      paint.setShader(new LinearGradient(b.left, b.top, b.right, b.top, 0x24000000, 0x0dffffff, Shader.TileMode.CLAMP));
-      canvas.drawRect(b, paint);
-      paint.setShader(new LinearGradient(b.left, b.top, b.left, b.bottom, 0x08ffffff, 0x3b000000, Shader.TileMode.CLAMP));
-      canvas.drawRect(b, paint);
-      paint.setShader(null);
     }
     @Override public void setAlpha(int alpha) {}
     @Override public void setColorFilter(android.graphics.ColorFilter filter) {}

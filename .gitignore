@@ -18,6 +18,10 @@ build/
 *.dmg
 *.zip
 .env*
+*.env
+*.env.*
+!.env.example
+!*.env.example
 *.p8
 *.p12
 *.pem
@@ -27,6 +31,12 @@ build/
 *.keystore
 *.jks
 signing/
+android/res/drawable/podcast.png
+android/res/drawable/heart.png
+android/res/drawable/heart_filled.png
+android/res/drawable/previous.png
+android/res/drawable/next.png
+android/res/drawable/volume.png
 .DS_Store
 credentials/
 user-state/
@@ -37,6 +47,7 @@ node_modules/
 .wrangler/
 *.log
 *.apk
+*.aab
 *.idsig
 
 # Linux local environments and generated packages.

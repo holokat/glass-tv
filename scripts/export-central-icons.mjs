@@ -25,13 +25,16 @@ const androidRoot = join(outputRoot, "android", "res", "drawable");
 
 for (const directory of [svgRoot, macRoot, androidRoot]) mkdirSync(directory, { recursive: true });
 
-for (const [name, componentName] of Object.entries(icons)) {
-  const entry = join(packageRoot, componentName, "index.mjs");
+for (const [name, definition] of Object.entries(icons)) {
+  const options = typeof definition === "string" ? { component: definition } : definition;
+  const componentName = options.component;
+  const entry = join(modulesRoot, options.package ?? packageName, componentName, "index.mjs");
   if (!existsSync(entry)) throw new Error(`Central component ${componentName} for ${name} is unavailable in the licensed package.`);
   const componentModule = await import(pathToFileURL(entry).href);
   const Component = componentModule[componentName] ?? componentModule.default;
   if (!Component) throw new Error(`Central component ${componentName} did not export a React component.`);
-  const svg = renderToStaticMarkup(React.createElement(Component, { mode: "raw", color: "#ffffff", size: 128, ariaHidden: true })).replaceAll("currentColor", "#ffffff");
+  let svg = renderToStaticMarkup(React.createElement(Component, { mode: "raw", color: "#ffffff", size: 128, ariaHidden: true })).replaceAll("currentColor", "#ffffff");
+  if (options.mirror) svg = svg.replace(/(<svg[^>]*>)([\s\S]*)(<\/svg>)/, '$1<g transform="translate(24 0) scale(-1 1)">$2</g>$3');
   const svgPath = join(svgRoot, `${name}.svg`);
   writeFileSync(svgPath, svg);
   for (const pngPath of [join(macRoot, `${name}.png`), join(androidRoot, `${name}.png`)]) {

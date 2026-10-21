@@ -43,3 +43,7 @@ See `CENTRAL_ICONS.md` for the icon prerequisite and `PROTOCOL.md` for the commu
 ## Website
 
 The static release website is in `website/`. Populate its licensed UI icons using `website/scripts/prepare-licensed-icons.sh` as described in `website/STYLEGUIDE.md`, then serve the folder locally. Only `index.html`, `styles.css`, `app.js`, and `assets/` belong in the production static upload. The public source excludes loose Central icon exports.
+
+## License
+
+Glass TV code owned by 21 Media LLC is available under the [MIT license](LICENSE). Third-party assets retain their own licenses; see [license scope](LICENSE-SCOPE.md).

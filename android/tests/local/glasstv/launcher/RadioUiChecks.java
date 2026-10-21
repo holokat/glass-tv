@@ -28,7 +28,7 @@ import java.util.Set;
 
 /**
  * Headless, controlled Radio rendering check. It never opens Radio, starts playback, requests
- * audio focus, or calls a controller directory method. The Popular row uses a real directory page
+ * audio focus, or calls a controller directory method. The Featured stations row uses the bundled catalog
  * loaded before construction; empty Recent/Favorites keep the browse surface intentionally compact.
  */
 public final class RadioUiChecks {
@@ -39,8 +39,11 @@ public final class RadioUiChecks {
     Looper.prepareMainLooper();
     Context app = applicationContext();
     step("application context ready");
-    RadioDirectory.Page popular = loadPopularBeforeController();
-    check(!popular.stations.isEmpty(), "real Popular directory page is available");
+    RadioDirectory.Page popular = loadPopularBeforeController(app);
+    check(!popular.stations.isEmpty(), "bundled Popular catalog page is available");
+    RadioDirectory.Page pop = loadCategoryBeforeController(app, "pop");
+    check(pop.stations.size() >= 5 && pop.stations.size() <= RadioDirectory.PAGE_SIZE,
+        "the Pop browse category supplies five or more exact curated stations");
 
     MemoryPreferences preferences = new MemoryPreferences();
     Context isolated = new ContextWrapper(app) {
@@ -62,15 +65,11 @@ public final class RadioUiChecks {
 
     measureAndLayout(shell);
     step("fixture laid out");
-    // app_process on this TV is killed whenever it enters Looper.loop(), so do not pump remote
-    // favicon callbacks in the headless renderer. Close the test-only loader after card layout;
-    // the screenshot verifies the same contained placeholder bounds used until artwork arrives.
-    privateField(controller, "stationArtwork", RadioArtwork.class).close();
     measureAndLayout(shell);
-    step("test-only artwork loader closed");
     float density = isolated.getResources().getDisplayMetrics().density;
     assertBrowseState(controller, shell, density);
     assertStationCards(shell, popular.stations, density);
+    assertCategoryCards(shell, density);
     assertIcons(controller, shell, isolated);
     render(shell, new File(args.length == 1 ? args[0] : "/data/local/tmp/glasstv-radio-ui", "popular-fixture.png"));
     assertPlayerFavoriteFocusRoute(controller, shell, popular.stations);
@@ -91,18 +90,30 @@ public final class RadioUiChecks {
     return system.createPackageContext("local.glasstv.launcher", 0);
   }
 
-  private static RadioDirectory.Page loadPopularBeforeController() throws Exception {
+  private static RadioDirectory.Page loadPopularBeforeController(Context context) throws Exception {
+    return loadPageBeforeController(context, null);
+  }
+
+  private static RadioDirectory.Page loadCategoryBeforeController(Context context, String categoryId) throws Exception {
+    return loadPageBeforeController(context, categoryId);
+  }
+
+  private static RadioDirectory.Page loadPageBeforeController(Context context, String categoryId) throws Exception {
     final RadioDirectory.Page[] page = new RadioDirectory.Page[1];
     final Exception[] failure = new Exception[1];
     Thread fetch = new Thread(() -> {
-      try { page[0] = new RadioDirectory().popular(new RadioDirectory.Cursor()); }
+      try {
+        RadioDirectory directory = new RadioDirectory(context);
+        page[0] = categoryId == null ? directory.popular(new RadioDirectory.Cursor())
+            : directory.browseGenre(categoryId, new RadioDirectory.Cursor());
+      }
       catch (Exception error) { failure[0] = error; }
-    }, "radio-ui-check-directory");
+    }, "radio-ui-check-catalog");
     fetch.start();
     fetch.join(45_000);
     if (fetch.isAlive()) {
       fetch.interrupt();
-      throw new IllegalStateException("Radio directory fixture timed out");
+      throw new IllegalStateException("Radio catalog fixture timed out");
     }
     if (failure[0] != null) throw failure[0];
     if (page[0] == null) throw new IllegalStateException("Radio directory fixture missing");
@@ -112,6 +123,7 @@ public final class RadioUiChecks {
   private static void assertBrowseState(RadioController controller, FrameLayout shell, float density) {
     TextView title = privateField(controller, "title", TextView.class);
     TextView search = privateField(controller, "searchField", TextView.class);
+    TextView status = privateField(controller, "status", TextView.class);
     LinearLayout content = privateField(controller, "content", LinearLayout.class);
     LinearLayout sections = privateField(controller, "sections", LinearLayout.class);
     FrameLayout player = privateField(controller, "playerBar", FrameLayout.class);
@@ -121,9 +133,11 @@ public final class RadioUiChecks {
     check(textSizeIs(title, 40), "Radio heading uses 40sp type");
     check(contentBounds.left == px(24, density) && contentBounds.width() == px(912, density),
         "Radio uses the full-width 24dp content inset without a left navigation rail");
-    check(searchBounds.left == px(24, density) && searchBounds.top == px(86, density)
+    check(searchBounds.left == px(512, density) && searchBounds.top == px(28, density)
             && searchBounds.width() == px(424, density) && searchBounds.height() == px(40, density),
-        "search remains a reachable full-width content control");
+        "search shares the Radio header and leaves room for a complete category card");
+    check(status.getParent() == content,
+        "transient Radio status is in the content flow and cannot overlap a section heading");
     check(viewWithDescription(shell, "Browse") == null && viewWithDescription(shell, "Favorites") == null,
         "the former left navigation controls are absent");
     check(textView(sections, "Recent") == null && textView(sections, "Favorites") == null,
@@ -131,36 +145,39 @@ public final class RadioUiChecks {
     check(player.getVisibility() == View.GONE, "idle radio does not show a player bar");
     check("Save station".contentEquals(playerFavorite.getContentDescription()) && playerFavorite.isFocusable() == false,
         "player favorite replaces the volume meter and only activates for a playback session");
-    TextView popular = (TextView) textView(sections, "Popular");
+    TextView popular = (TextView) textView(sections, "Featured stations");
     TextView genres = (TextView) textView(sections, "Genres");
-    check(popular != null && genres != null && textSizeIs(popular, 22)
-            && textSizeIs(genres, 22),
-        "browse section headings use 22sp type");
+    TextView styles = (TextView) textView(sections, "Styles");
+    TextView moods = (TextView) textView(sections, "Moods");
+    check(popular != null && genres != null && styles != null && moods != null
+            && textSizeIs(popular, 22) && textSizeIs(genres, 22)
+            && textSizeIs(styles, 22) && textSizeIs(moods, 22),
+        "Featured stations, Genres, Styles, and Moods headings use 22sp type");
   }
 
   private static void assertStationCards(FrameLayout shell, List<RadioStationPolicy.Station> stations, float density) {
     ArrayList<View> cards = new ArrayList<>();
     collectDescriptionPrefix(shell, "Play ", cards);
     int expected = Math.min(5, stations.size());
-    check(cards.size() >= expected, "Popular renders five-or-fewer real station cards");
+    check(cards.size() >= expected, "Featured stations renders five-or-fewer real station cards");
     for (int index = 0; index < expected; index++) {
       View card = cards.get(index);
       RadioStationPolicy.Station station = stations.get(index);
       check(("Play " + station.name).contentEquals(card.getContentDescription()),
           "card retains the unmodified directory station title");
-      check(card.getWidth() == px(284, density) && card.getHeight() == px(200, density),
-          "card " + index + " doubles the previous common image-and-metadata bounds");
-      if (index < 3) check(card.getRight() <= px(936, density),
-          "visible card " + index + " fits inside the full-width content edge");
+      check(card.getWidth() == px(168, density) && card.getHeight() == px(136, density),
+          "station card " + index + " uses the compact 168dp by 136dp TV tile");
+      if (index < 5) check(card.getRight() <= px(936, density),
+          "station tile " + index + " is fully visible in the five-across TV row");
       check(card instanceof ViewGroup && ((ViewGroup) card).getChildAt(0) instanceof FrameLayout,
           "card " + index + " has a bounded artwork frame");
       FrameLayout art = (FrameLayout) ((ViewGroup) card).getChildAt(0);
-      check(art.getWidth() == px(284, density) && art.getHeight() == px(158, density),
-          "artwork frame " + index + " grows with the card regardless of favicon dimensions");
+      check(art.getWidth() == px(168, density) && art.getHeight() == px(94, density),
+          "station artwork frame " + index + " is the compact 168dp by 94dp gradient image");
       check(art.getForeground() != null, "focus outline is constrained to artwork " + index);
       check(art.getChildCount() > 0 && art.getChildAt(0) instanceof ImageView
               && artworkScale(((ImageView) art.getChildAt(0)).getScaleType()),
-          "station artwork " + index + " supports placeholder containment and loaded cover");
+          "station artwork " + index + " keeps a stable gradient frame");
       check(((ViewGroup) card).getChildCount() == 2 && ((ViewGroup) card).getChildAt(1) instanceof TextView
               && station.name.contentEquals(((TextView) ((ViewGroup) card).getChildAt(1)).getText()),
           "station card " + index + " renders only the real station title below artwork");
@@ -172,15 +189,37 @@ public final class RadioUiChecks {
     }
   }
 
+  private static void assertCategoryCards(FrameLayout shell, float density) {
+    ArrayList<View> categories = new ArrayList<>();
+    collectDescriptionPrefix(shell, "Browse ", categories);
+    check(categories.size() >= 18 + 30 + 12,
+        "Browse exposes all 18 genres, 30 styles, and 12 moods in horizontal rows");
+    for (int index = 0; index < categories.size(); index++) {
+      View card = categories.get(index);
+      check(card.getWidth() == px(168, density) && card.getHeight() == px(207, density),
+          "category card " + index + " is a 168dp square image with an external label");
+      check(card instanceof ViewGroup && ((ViewGroup) card).getChildCount() == 2,
+          "category card " + index + " separates photographic art and label");
+      View art = ((ViewGroup) card).getChildAt(0);
+      check(art.getWidth() == px(168, density) && art.getHeight() == px(168, density)
+              && art.getForeground() != null,
+          "category art " + index + " is square and carries the bounded focus outline");
+      if (index < 5) check(card.getRight() <= px(936, density),
+          "category tile " + index + " is fully visible in the five-across TV row");
+      check(card.requestFocus() && card.hasFocus(), "category card " + index + " receives TV focus");
+    }
+  }
+
   private static void assertPlayerFavoriteFocusRoute(
       RadioController controller, FrameLayout shell, List<RadioStationPolicy.Station> popularStations)
       throws Exception {
     ArrayList<View> cards = new ArrayList<>();
     collectDescriptionPrefix(shell, "Play ", cards);
-    ArrayList<View> genres = new ArrayList<>();
-    collectDescriptionPrefix(shell, "Browse ", genres);
+    ArrayList<View> categories = new ArrayList<>();
+    collectDescriptionPrefix(shell, "Browse ", categories);
     View popular = cards.get(0);
-    View genre = genres.get(0);
+    View firstCategory = categories.get(0);
+    View lastCategory = categories.get(categories.size() - 1);
     TextView search = privateField(controller, "searchField", TextView.class);
     FrameLayout player = privateField(controller, "playerBar", FrameLayout.class);
     TextView favorite = privateField(controller, "playerFavorite", TextView.class);
@@ -190,33 +229,37 @@ public final class RadioUiChecks {
     favorite.setFocusable(true);
     updateRoutes.invoke(controller, true);
     measureAndLayout(shell);
-    check(popular.getNextFocusDownId() == genre.getId(),
-        "D-pad Down from Popular continues to Genres while playback is active");
-    check(genre.getNextFocusUpId() == popular.getId(),
-        "D-pad Up from Genres returns to the same Popular column");
-    check(genre.getNextFocusDownId() == favorite.getId(),
-        "only the last row exposes the player favorite below it");
-    check(popular.requestFocus() && popular.hasFocus(), "Popular card focus is restored before entering the player");
-    check(FocusFinder.getInstance().findNextFocus(shell, popular, View.FOCUS_DOWN) == genre,
-        "FocusFinder reaches Genres before the player");
+    Rect playerBounds = boundsInShell(shell, player);
+    check(playerBounds.bottom <= shell.getHeight() - px(10, shell.getResources().getDisplayMetrics().density),
+        "the player bar remains fully above the bottom system inset");
+    check(popular.getNextFocusDownId() == firstCategory.getId(),
+        "D-pad Down from Featured stations continues to the first category row while playback is active");
+    check(firstCategory.getNextFocusUpId() == popular.getId(),
+        "D-pad Up from the first category returns to the same Featured stations column");
+    check(lastCategory.getNextFocusDownId() == favorite.getId(),
+        "only the final category row exposes the player favorite below it");
+    check(popular.requestFocus() && popular.hasFocus(), "Featured stations card focus is restored before entering the player");
+    check(FocusFinder.getInstance().findNextFocus(shell, popular, View.FOCUS_DOWN) == firstCategory,
+        "FocusFinder reaches categories before the player");
     check(search.requestFocus(), "search takes focus before entering the first row");
     search.dispatchKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN,
         android.view.KeyEvent.KEYCODE_DPAD_DOWN));
     check(popular.hasFocus(), "D-pad Down from Search reaches the first card");
-    check(genre.requestFocus() && genre.hasFocus(), "last row focus is restored before entering the player");
-    check(FocusFinder.getInstance().findNextFocus(shell, genre, View.FOCUS_DOWN) == favorite,
+    check(lastCategory.requestFocus() && lastCategory.hasFocus(), "last category focus is restored before entering the player");
+    check(FocusFinder.getInstance().findNextFocus(shell, lastCategory, View.FOCUS_DOWN) == favorite,
         "D-pad Down from the last row reaches the player favorite");
     check(favorite.requestFocus() && favorite.hasFocus(), "player favorite is focusable during playback");
-    check(FocusFinder.getInstance().findNextFocus(shell, favorite, View.FOCUS_UP) == genre,
+    check(FocusFinder.getInstance().findNextFocus(shell, favorite, View.FOCUS_UP) == lastCategory,
         "D-pad Up returns from player favorite to the last card");
     Method showBrowse = RadioController.class.getDeclaredMethod("showBrowse", List.class);
     showBrowse.setAccessible(true);
     showBrowse.invoke(controller, popularStations);
     measureAndLayout(shell);
-    ArrayList<View> rebuiltGenres = new ArrayList<>();
-    collectDescriptionPrefix(shell, "Browse ", rebuiltGenres);
+    ArrayList<View> rebuiltCategories = new ArrayList<>();
+    collectDescriptionPrefix(shell, "Browse ", rebuiltCategories);
     check(favorite.hasFocus(), "refreshing the Favorites row keeps focus in the player");
-    check(FocusFinder.getInstance().findNextFocus(shell, favorite, View.FOCUS_UP) == rebuiltGenres.get(0),
+    check(FocusFinder.getInstance().findNextFocus(shell, favorite, View.FOCUS_UP)
+            == rebuiltCategories.get(rebuiltCategories.size() - 1),
         "player Up is remapped to the rebuilt matching card");
   }
 
