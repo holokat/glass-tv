@@ -21,6 +21,7 @@ Follow the owner's web-design-rules: no eyebrow text, decorative filler, all-cap
 
 `index.html` owns the single header, hero, feature sections and footer. `styles.css` owns tokens and responsive components; `app.js` owns the launcher/style preview controls and one shared reveal observer.
 
+- Brand: use `glass-tv-mark.png`, the transparent cutout of the existing glass screens, beside live Glass TV text. No black tile or rounded image mask. Mark size is 56 px desktop and 42 px mobile; preserve its aspect ratio. The original app icon remains the favicon.
 - Hero: centered heading and exact owner-supplied subheading, then TV, style buttons, wallpaper swatches and links. Label it Interactive preview. Service shortcuts use white marks on blurred pills; cards use original-color marks. Every colorful card uses the same 16:9 face. Position logos inside that face so intrinsic image dimensions cannot change card height. Only the selected shortcut has a white outline. Keep selection keyboard accessible with arrows, Home and End.
 - Weather: Scenic, Minimal and Icon & temperature previews. City titles use light weight matching temperature. Weather values are explicitly sample data, never fetched or claimed as live.
 - Feature copy: grounded in the project STYLEGUIDE.md, PROTOCOL.md and Android RadioController/RadioDirectory. Movie streaming needs the Mac; the unreleased TV APK remains clearly identified near download. No invented station names, movie titles, testimonials, performance claims or compatibility promises.
