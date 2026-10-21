@@ -88,9 +88,10 @@
     gallery.classList.toggle('inline', button.dataset.weather === 'inline');
     setPressed(weatherButtons, button);
   }));
-  // Cover every section's content, including controls and captions, without
+  // The hero has its own first-paint CSS sequence. Scroll-reveal the remaining
+  // sections, including controls and captions, without
   // hiding an entire tall section before its lower content reaches the screen.
-  const revealTargets = [...document.querySelectorAll('main > section > *, footer')];
+  const revealTargets = [...document.querySelectorAll('main > section:not(.hero) > *, footer')];
   let observer;
   const reveal = element => {
     element.classList.remove('will-reveal');
