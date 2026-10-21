@@ -44,13 +44,43 @@
     gallery.classList.toggle('inline', button.dataset.weather === 'inline');
     setPressed(weatherButtons, button);
   }));
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
-    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
-      if (entry.isIntersecting) { entry.target.classList.add('revealed'); entry.target.classList.remove('will-reveal'); observer.unobserve(entry.target); }
-    }), {threshold:.08, rootMargin:'0px 0px 30px 0px'});
-    document.querySelectorAll('[data-reveal]').forEach(element => {
-      if (element.getBoundingClientRect().top > innerHeight) element.classList.add('will-reveal');
-      observer.observe(element);
-    });
+  // Cover every section's content, including controls and captions, without
+  // hiding an entire tall section before its lower content reaches the screen.
+  const revealTargets = [...document.querySelectorAll('main > section > *, footer')];
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let observer;
+  const reveal = element => {
+    element.classList.remove('will-reveal');
+    element.classList.add('revealed');
+    observer?.unobserve(element);
+  };
+  const revealAll = () => {
+    observer?.disconnect();
+    revealTargets.forEach(reveal);
+  };
+  if (!reducedMotion.matches && 'IntersectionObserver' in window) {
+    try {
+      observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => { if (entry.isIntersecting) reveal(entry.target); });
+      }, {threshold: 0, rootMargin: '0px 0px -24px 0px'});
+      revealTargets.forEach(element => {
+        element.setAttribute('data-reveal', '');
+        element.classList.add('will-reveal');
+      });
+      // Establish the hidden frame before observing, including on initial load.
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (reducedMotion.matches) return revealAll();
+        revealTargets.forEach(element => observer.observe(element));
+      }));
+      document.addEventListener('focusin', event => {
+        const target = event.target.closest('[data-reveal]');
+        if (target) reveal(target);
+      });
+      reducedMotion.addEventListener('change', event => {
+        if (event.matches) revealAll();
+      });
+    } catch {
+      revealAll();
+    }
   }
 })();

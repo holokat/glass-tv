@@ -27,7 +27,7 @@ Follow the owner's web-design-rules: no eyebrow text, decorative filler, all-cap
 - Weather: Scenic, Minimal and Icon & temperature previews. City titles use light weight matching temperature. Weather values are explicitly sample data, never fetched or claimed as live.
 - Feature copy: grounded in the project STYLEGUIDE.md, PROTOCOL.md and Android RadioController/RadioDirectory. Movie streaming needs the Mac; the unreleased TV APK remains clearly identified near download. No invented station names, movie titles, testimonials, performance claims or compatibility promises.
 - Mac editor: illustrative product UI, not a screenshot of a live connected device. Its accessible label identifies it as an illustration.
-- Motion: 850 ms initial fade/16 px rise; 750 ms section reveal/22 px rise, once per section; 240 ms hover and selection transitions. Press scale 0.96. Radio wave animation only on hover. Reduced motion removes movement and reveals immediately. Without JS, content remains visible.
+- Motion: 700 ms fade/18 px rise for every direct content block in every section and the footer, once as each enters the viewport; 240 ms hover and selection transitions. Press scale 0.96. Radio wave animation only on hover. Reduced motion removes movement and reveals immediately, including when changed while the page is open. Keyboard focus reveals its content immediately. Without JS, content remains visible.
 - Buttons and anchors expose visible keyboard focus. Preview controls use aria-pressed. Public navigation and DMG download remain ordinary anchors.
 
 ## Assets and release
