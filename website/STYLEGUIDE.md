@@ -35,7 +35,7 @@ Follow the owner's web-design-rules: no eyebrow text, decorative filler, all-cap
 
 `oled-reef.png` is newly AI-generated marine demo artwork. It evokes an OLED demo reel; the site makes no literal 8K-resolution or hardware claim. Coastal, London and Tokyo artwork comes from the project's generated assets. Tokyo uses `tokyo-01.jpg` with the Tokyo Tower composition. Provider marks come from `shared/brands`; they identify shortcut apps, not partnerships. No actual private media or device state is published.
 
-Public source and downloads: https://github.com/holokat/glass-tv. Production site: https://glasstv.pages.dev. Publish only HTML, CSS, JavaScript and referenced assets. Keep raw licensed icon collections, local files, credentials and build artifacts out of Git.
+Public source and downloads: https://github.com/holokat/glass-tv. Production site: https://glasstv.xyz. Publish only HTML, CSS, JavaScript and referenced assets. Keep raw licensed icon collections, local files, credentials and build artifacts out of Git.
 
 ## Platform wording
 

@@ -1,6 +1,6 @@
 # Glass TV
 
-[Website](https://glasstv.pages.dev) · [Download for Mac](https://github.com/holokat/glass-tv/releases/latest/download/Glass-TV.dmg) · [Releases](https://github.com/holokat/glass-tv/releases)
+[Website](https://glasstv.xyz) · [Download for Mac](https://github.com/holokat/glass-tv/releases/latest/download/Glass-TV.dmg) · [Releases](https://github.com/holokat/glass-tv/releases)
 
 ## Install
 
