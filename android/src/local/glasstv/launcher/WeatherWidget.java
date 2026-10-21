@@ -1023,7 +1023,7 @@ final class WeatherWidget extends View {
     }
 
     private static Bitmap loadDrawable(Context context, String name) {
-        int id = context.getResources().getIdentifier(name, "drawable", context.getPackageName());
+        int id = DrawableResources.id(context, name);
         return id == 0 ? null : BitmapFactory.decodeResource(context.getResources(), id);
     }
 

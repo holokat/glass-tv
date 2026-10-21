@@ -1086,7 +1086,7 @@ final class RadioController {
     }
   }
   private void setIcon(TextView view, String name, int sizeDp) {
-    int id = context.getResources().getIdentifier(name, "drawable", context.getPackageName());
+    int id = DrawableResources.id(context, name);
     if (id == 0) return;
     Drawable icon = context.getResources().getDrawable(id);
     int size = dp(sizeDp);
@@ -1097,7 +1097,7 @@ final class RadioController {
     } else view.setCompoundDrawables(icon, null, null, null);
     view.setCompoundDrawablePadding(dp(8));
   }
-  private void setImageIcon(ImageView view, String name) { int id = context.getResources().getIdentifier(name, "drawable", context.getPackageName()); if (id != 0) view.setImageResource(id); view.setScaleType(ImageView.ScaleType.CENTER_INSIDE); }
+  private void setImageIcon(ImageView view, String name) { int id = DrawableResources.id(context, name); if (id != 0) view.setImageResource(id); view.setScaleType(ImageView.ScaleType.CENTER_INSIDE); }
   private GradientDrawable roundRect(int radius, int color) { GradientDrawable drawable = new GradientDrawable(); drawable.setColor(color); drawable.setCornerRadius(radius); return drawable; }
   private int dp(int value) { return Math.round(value * context.getResources().getDisplayMetrics().density); }
 

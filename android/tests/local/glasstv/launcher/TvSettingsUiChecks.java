@@ -45,6 +45,14 @@ public final class TvSettingsUiChecks {
     Button weatherTarget = button(root, "Weather");
     check(weatherTarget != null && weatherTarget.isFocusable(), "Root keeps the next directional target focusable");
     step("root focus targets ready");
+    Button receiver = button(root, "Mac companion receiver");
+    check(receiver != null && receiver.isFocusable(), "Root exposes a remote-focusable companion receiver control");
+    step("receiver control ready");
+    Button privacy = button(root, "Privacy policy");
+    check(privacy != null && privacy.isFocusable(), "Root exposes a remote-focusable privacy policy action");
+    privacy.performClick();
+    check(host.privacyPolicyRequests == 1, "Privacy policy action forwards exactly once to its host");
+    step("privacy policy action ready");
     LinearLayout appsPage = controller.buildAppsPage();
     step("apps built without a headless dialog");
     check(button(appsPage, "Shortcuts") != null, "Apps starts with the dedicated shortcut manager");
@@ -127,6 +135,7 @@ public final class TvSettingsUiChecks {
   private static final class FakeHost implements TvSettingsController.Host {
     JSONObject apps = AppsSettings.defaults();
     JSONObject weather;
+    int privacyPolicyRequests;
 
     FakeHost() {
       try {
@@ -144,7 +153,10 @@ public final class TvSettingsUiChecks {
     @Override public void previewNavigationSound(JSONObject value) { }
     @Override public void showDialog(AlertDialog dialog, Runnable onDismiss) { }
     @Override public void pairMac() { }
+    @Override public boolean companionReceiverEnabled() { return true; }
+    @Override public void setCompanionReceiverEnabled(boolean enabled) { }
     @Override public void chooseInput() { }
+    @Override public void openPrivacyPolicy() { privacyPolicyRequests++; }
     @Override public void openSystemSettings() { }
   }
 }

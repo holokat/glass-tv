@@ -39,7 +39,10 @@ final class TvSettingsController {
     void previewNavigationSound(JSONObject apps);
     void showDialog(AlertDialog dialog, Runnable onDismiss);
     void pairMac();
+    boolean companionReceiverEnabled();
+    void setCompanionReceiverEnabled(boolean enabled);
     void chooseInput();
+    void openPrivacyPolicy();
     void openSystemSettings();
   }
 
@@ -74,9 +77,36 @@ final class TvSettingsController {
     addAction(content, "Apps", "Shortcuts and navigation sound", this::showApps);
     addAction(content, "Weather", "Cities and appearance", this::showWeather);
     addAction(content, "Pair Mac", "Connect a Mac companion", host::pairMac);
+    addAction(
+        content,
+        "Mac companion receiver",
+        host.companionReceiverEnabled() ? "Running after restart" : "Stopped",
+        this::showCompanionReceiver);
     addAction(content, "TV input", "Choose an HDMI input", host::chooseInput);
+    addAction(content, "Privacy policy", "Open glasstv.xyz/privacy", host::openPrivacyPolicy);
     addAction(content, "System settings", "Open Android TV settings", host::openSystemSettings);
     return content;
+  }
+
+  private void showCompanionReceiver() {
+    boolean enabled = host.companionReceiverEnabled();
+    LinearLayout content = content();
+    addHeading(content, "Mac companion receiver", enabled ? "Available to your paired Mac." : "Stopped until you start it.");
+    addNote(
+        content,
+        enabled
+            ? "It will start again after this TV restarts."
+            : "Paired Macs and imported media stay on this TV.");
+    addAction(
+        content,
+        enabled ? "Stop receiver" : "Start receiver",
+        enabled ? "Stop companion connections and do not restart automatically" : "Allow your paired Mac to connect and start after restart",
+        () -> {
+          host.setCompanionReceiverEnabled(!enabled);
+          showCompanionReceiver();
+        });
+    addBack(content, this::showRoot);
+    show("Mac companion receiver", content, this::showRoot, null);
   }
 
   /** Latest in-memory settings page for headless TV rendering checks. */

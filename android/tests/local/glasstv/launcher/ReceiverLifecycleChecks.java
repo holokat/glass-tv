@@ -15,6 +15,12 @@ public final class ReceiverLifecycleChecks {
     check(
         !ReceiverStartupPolicy.startsReceiver("untrusted.action"),
         "unrelated broadcasts cannot start the receiver");
+    check(
+        !ReceiverStartupPolicy.startsReceiver(false, "android.intent.action.BOOT_COMPLETED"),
+        "a receiver stopped from TV settings stays stopped across boot");
+    check(
+        ReceiverStartupPolicy.startsReceiver(true, "android.intent.action.BOOT_COMPLETED"),
+        "an enabled receiver retains its permitted boot restart path");
 
     ReceiverAttachment<String> attachment = new ReceiverAttachment<>();
     attachment.attach("first activity");

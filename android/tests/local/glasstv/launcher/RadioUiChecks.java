@@ -87,7 +87,12 @@ public final class RadioUiChecks {
       fonts.invoke(null);
     }
     Context system = (Context) activityThread.getMethod("getSystemContext").invoke(thread);
-    return system.createPackageContext("local.glasstv.launcher", 0);
+    try {
+      // Prefer the installed public candidate so this check covers its renamed application ID.
+      return system.createPackageContext("xyz.glasstv.launcher", 0);
+    } catch (android.content.pm.PackageManager.NameNotFoundException ignored) {
+      return system.createPackageContext("local.glasstv.launcher", 0);
+    }
   }
 
   private static RadioDirectory.Page loadPopularBeforeController(Context context) throws Exception {
@@ -264,8 +269,15 @@ public final class RadioUiChecks {
   }
 
   private static void assertIcons(RadioController controller, FrameLayout shell, Context context) {
+    String resourcePackage = DrawableResources.resourcePackage(context.getResources());
+    check(resourcePackage != null && resourcePackage.length() > 0,
+        "compiled drawable resource namespace is available");
+    if (!resourcePackage.equals(context.getPackageName())) {
+      check(DrawableResources.id(context, "settings") != 0,
+          "drawables resolve through their compiled namespace when the application ID is renamed");
+    }
     for (String icon : new String[] {"podcast", "heart", "heart_filled", "search", "previous", "next", "play", "pause"})
-      check(context.getResources().getIdentifier(icon, "drawable", context.getPackageName()) != 0,
+      check(DrawableResources.id(context, icon) != 0,
           "installed Central " + icon + " drawable is available");
     TextView search = privateField(controller, "searchField", TextView.class);
     check(search.getCompoundDrawables()[0] != null,

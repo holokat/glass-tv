@@ -459,7 +459,7 @@ final class RadioSearchOverlay {
   }
 
   private void setIcon(TextView view, String name, int sizeDp) {
-    int id = context.getResources().getIdentifier(name, "drawable", context.getPackageName());
+    int id = DrawableResources.id(context, name);
     if (id == 0) return;
     Drawable icon = context.getResources().getDrawable(id).mutate();
     icon.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
@@ -470,7 +470,7 @@ final class RadioSearchOverlay {
   }
 
   private void setImageIcon(ImageView view, String name) {
-    int id = context.getResources().getIdentifier(name, "drawable", context.getPackageName());
+    int id = DrawableResources.id(context, name);
     if (id == 0) return;
     view.setImageResource(id);
     view.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);

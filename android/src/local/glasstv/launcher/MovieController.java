@@ -422,7 +422,7 @@ final class MovieController {
         return view;
     }
     private void setControlIcon(TextView view, String name) {
-        int id = context.getResources().getIdentifier(name, "drawable", context.getPackageName());
+        int id = DrawableResources.id(context, name);
         if (id != 0) {
             android.graphics.drawable.Drawable drawable = context.getResources().getDrawable(id);
             int size = dp(34); drawable.setBounds(0, 0, size, size); view.setCompoundDrawables(null, drawable, null, null);

@@ -50,6 +50,8 @@ import java.util.Map;
 /**
  * Read-only Wi-Fi information panel. Network selection and saved-network changes stay in Android
  * system settings, where the platform can apply the user's existing policy and credentials.
+ * This panel is not attached to the launcher: its exposed Wi-Fi action opens Android settings and
+ * does not request Wi-Fi or location permissions.
  */
 final class WifiPanel {
   interface Host {
@@ -663,7 +665,7 @@ final class WifiPanel {
   private TextView centralIcon(String name, int sizeDp) {
     TextView icon = new TextView(context);
     icon.setGravity(Gravity.CENTER);
-    int id = context.getResources().getIdentifier(name, "drawable", context.getPackageName());
+    int id = DrawableResources.id(context, name);
     if (id != 0) {
       Drawable drawable = context.getResources().getDrawable(id);
       int size = dp(sizeDp);

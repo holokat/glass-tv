@@ -276,7 +276,20 @@ public final class MainActivity extends Activity
               public void pairMac() { showPairing(); }
 
               @Override
+              public boolean companionReceiverEnabled() {
+                return ReceiverStartupPolicy.isReceiverEnabled(MainActivity.this);
+              }
+
+              @Override
+              public void setCompanionReceiverEnabled(boolean enabled) {
+                setCompanionReceiverEnabledFromSettings(enabled);
+              }
+
+              @Override
               public void chooseInput() { showInputPicker(); }
+
+              @Override
+              public void openPrivacyPolicy() { MainActivity.this.openPrivacyPolicy(); }
 
               @Override
               public void openSystemSettings() { startActivity(new Intent(Settings.ACTION_SETTINGS)); }
@@ -360,9 +373,28 @@ public final class MainActivity extends Activity
   }
 
   private void bindReceiver() {
+    bindReceiver(true);
+  }
+
+  /** Binding may follow an explicit start request without sending that request twice. */
+  private void bindReceiver(boolean startService) {
     if (receiverBound) return;
-    ReceiverService.start(this);
+    if (startService) ReceiverService.start(this);
     receiverBound = bindService(new Intent(this, ReceiverService.class), receiverConnection, Context.BIND_AUTO_CREATE);
+  }
+
+  private void setCompanionReceiverEnabledFromSettings(boolean enabled) {
+    ReceiverStartupPolicy.setReceiverEnabled(this, enabled);
+    if (enabled) {
+      // A previous Stop can call stopSelf while this Activity still holds a binding. Starting
+      // explicitly restores the service's started lifetime; LocalSyncServer.start is idempotent.
+      ReceiverService.start(this);
+      if (!receiverBound) bindReceiver(false);
+    } else if (receiverService != null) {
+      receiverService.setReceiverEnabled(false);
+    } else {
+      ReceiverService.stop(this);
+    }
   }
 
   private void resumeForegroundLauncher() {
@@ -1089,7 +1121,30 @@ public final class MainActivity extends Activity
     }
   }
 
+  private void openPrivacyPolicy() {
+    try {
+      startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://glasstv.xyz/privacy")));
+    } catch (Exception unavailable) {
+      showLauncherDialog(
+          new AlertDialog.Builder(this)
+              .setTitle("Privacy policy unavailable")
+              .setMessage("A browser is not available on this TV.")
+              .setPositiveButton("Close", null)
+              .create());
+    }
+  }
+
   private void showPairing() {
+    if (!ReceiverStartupPolicy.isReceiverEnabled(this)) {
+      showLauncherDialog(
+          new AlertDialog.Builder(this)
+              .setTitle("Mac companion is stopped")
+              .setMessage("Start the Mac companion receiver in Glass TV settings before pairing.")
+              .setPositiveButton("Close", null)
+              .create());
+      return;
+    }
+    if (server == null) return;
     try {
       String code = server.openPairing();
       android.widget.LinearLayout content = new android.widget.LinearLayout(this);
@@ -2448,7 +2503,7 @@ public final class MainActivity extends Activity
     private static TextView icon(Context context, String name) {
       TextView view = text(context, 12);
       view.setGravity(android.view.Gravity.CENTER);
-      int id = context.getResources().getIdentifier(name, "drawable", context.getPackageName());
+      int id = DrawableResources.id(context, name);
       if (id != 0) {
         android.graphics.drawable.Drawable drawable = context.getResources().getDrawable(id);
         int size = (int) (30 * context.getResources().getDisplayMetrics().density);
@@ -2558,9 +2613,9 @@ public final class MainActivity extends Activity
         x.drawRoundRect(r, radius, radius, outline);
       }
       if (icon != null) {
-        int id = c.getResources().getIdentifier(icon, "drawable", c.getPackageName());
+        int id = DrawableResources.id(c, icon);
         if (id == 0 && fallbackIcon != null)
-          id = c.getResources().getIdentifier(fallbackIcon, "drawable", c.getPackageName());
+          id = DrawableResources.id(c, fallbackIcon);
         if (id != 0) {
           android.graphics.drawable.Drawable d = c.getResources().getDrawable(id);
           int sourceW = Math.max(1, d.getIntrinsicWidth()),

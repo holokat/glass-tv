@@ -6,7 +6,7 @@
 
 Download the signed, Apple-notarized DMG and drag Glass TV to Applications. Requires an Apple silicon Mac running macOS 13 or later.
 
-The TV receiver is being released separately. Connecting and syncing requires the Glass TV receiver installed on a compatible TV on the same local network.
+The [Android TV testing release](https://github.com/holokat/glass-tv/releases/tag/android-v1.0.1-rc.1) includes a signed universal APK and installation instructions. Connecting and syncing requires Glass TV on a compatible TV on the same local network. The Android app has not been submitted to Google Play.
 
 Movie inspection and video conversion require FFmpeg. If you already use Homebrew, install it with `brew install ffmpeg`. FFmpeg is not included in the DMG.
 
@@ -32,17 +32,17 @@ The separate Qt companion is in [`linux/`](linux/README.md). This is an early di
 
 ## Android source
 
-The `android/` directory contains source and resources required for review. No APK, APK signature, or private signing material is included. The receiver APK is not part of this release.
+The `android/` directory contains source and resources required for review. Signed testing APKs are attached to [Android releases](https://github.com/holokat/glass-tv/releases/tag/android-v1.0.1-rc.1). Build and submission notes are in [`distribution-support/`](distribution-support/README.md). Private signing material is never included.
 
 ## Privacy and release scope
 
 No local user libraries, pairing state, credentials, keys, build caches, device artifacts, or absolute local filesystem paths are included. The protocol supports local-network communication with a compatible receiver.
 
-See `CENTRAL_ICONS.md` for the icon prerequisite and `PROTOCOL.md` for the communication protocol.
+Read the [privacy policy](https://glasstv.xyz/privacy). See `CENTRAL_ICONS.md` for the icon prerequisite and `PROTOCOL.md` for the communication protocol.
 
 ## Website
 
-The static release website is in `website/`. Populate its licensed UI icons using `website/scripts/prepare-licensed-icons.sh` as described in `website/STYLEGUIDE.md`, then serve the folder locally. Only `index.html`, `styles.css`, `app.js`, and `assets/` belong in the production static upload. The public source excludes loose Central icon exports.
+The static release website is in `website/`. Populate its licensed UI icons using `website/scripts/prepare-licensed-icons.sh` as described in `website/STYLEGUIDE.md`, then serve the folder locally. Publish the runtime HTML, CSS, JavaScript, station-source JSON, robots.txt, sitemap.xml, and assets. Exclude tests, scripts and internal documentation from the static upload. The public source excludes loose Central icon exports.
 
 ## License
 

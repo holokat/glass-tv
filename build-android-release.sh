@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Builds the signed Glass TV 1.0.0 Play artifacts without changing the local-development build.
+# Builds the signed Glass TV 1.0.1 Play artifacts without changing the local-development build.
 set -euo pipefail
 umask 077
 
 SOURCE="$(cd "$(dirname "$0")" && pwd)"
 TASK="$(cd "$SOURCE/.." && pwd)"
 
-readonly VERSION_NAME="1.0.0"
-readonly VERSION_CODE="1"
+readonly VERSION_NAME="1.0.1"
+readonly VERSION_CODE="2"
 readonly MIN_SDK="26"
 readonly TARGET_SDK="34"
 readonly COMPILE_SDK="36"
@@ -41,7 +41,7 @@ Usage: GLASSTV_RELEASE_APPLICATION_ID=xyz.glasstv.launcher \
        GLASSTV_RELEASE_KEY_PASSWORD_FILE=/absolute/path/key-password \
        ./build-android-release.sh [--check]
 
-Builds Glass TV 1.0.0 (version code 1) for min SDK 26, target SDK 34 and
+Builds Glass TV 1.0.1 (version code 2) for min SDK 26, target SDK 34 and
 compile SDK 36. The release key must be explicitly supplied; this script never
 uses or creates the development key used by build-android.sh.
 
@@ -133,6 +133,17 @@ check_release_configuration() {
   if rg -n 'android:name="\.' "$SOURCE/android/AndroidManifest.xml" >/dev/null; then
     die "Release manifest must use fully qualified component class names when the application ID is renamed"
   fi
+  if rg -n 'getIdentifier\(' "$SOURCE/android/src/local/glasstv/launcher" | grep -Fv 'DrawableResources.java' >/dev/null; then
+    die "Release drawable lookup must resolve through DrawableResources, not the runtime application ID"
+  fi
+  if ! rg -F 'public void openPrivacyPolicy() { MainActivity.this.openPrivacyPolicy(); }' \
+      "$SOURCE/android/src/local/glasstv/launcher/MainActivity.java" >/dev/null; then
+    die "Release Settings privacy action must forward to MainActivity"
+  fi
+  if ! rg -U 'private void setCompanionReceiverEnabledFromSettings\(boolean enabled\) \{\s+ReceiverStartupPolicy\.setReceiverEnabled\(this, enabled\);\s+if \(enabled\) \{\s+//.*\s+//.*\s+ReceiverService\.start\(this\);\s+if \(!receiverBound\) bindReceiver\(false\);' \
+      "$SOURCE/android/src/local/glasstv/launcher/MainActivity.java" >/dev/null; then
+    die "Enabling the companion receiver must request the service's started lifetime"
+  fi
 }
 
 mode="build"
@@ -165,7 +176,19 @@ for artifact in "$OUTPUT_APK" "$OUTPUT_AAB" "$OUTPUT_SUMS" "$OUTPUT_CERTIFICATE"
   [[ ! -e "$artifact" ]] || die "Refusing to overwrite an existing release artifact: $artifact"
 done
 mkdir -p "$BUILD/gen" "$BUILD/classes" "$BUILD/dex" "$MODULE_DIR/manifest" "$MODULE_DIR/dex" "$ASSET_STAGE" "$OUTPUT_DIR"
-tar -C "$SOURCE/android/assets" --exclude=README.md --exclude=provenance.json --exclude=atlas-provenance.json -cf - . | tar -C "$ASSET_STAGE" -xf -
+# Package only runtime assets. Hard links avoid a second copy of large local artwork while the
+# bundle is being assembled; neither aapt2 nor bundletool mutates staged inputs.
+while IFS= read -r -d '' source_asset; do
+  relative_asset="${source_asset#"$SOURCE/android/assets/"}"
+  mkdir -p "$ASSET_STAGE/$(dirname "$relative_asset")"
+  ln "$source_asset" "$ASSET_STAGE/$relative_asset"
+done < <(
+  find "$SOURCE/android/assets" -type f \
+    ! -name README.md \
+    ! -name provenance.json \
+    ! -name atlas-provenance.json \
+    -print0
+)
 scan_staged_json "$ASSET_STAGE"
 
 "$AAPT2" compile --dir "$SOURCE/android/res" -o "$BUILD/resources.zip"
@@ -181,6 +204,9 @@ scan_staged_json "$ASSET_STAGE"
   --replace-version \
   -A "$ASSET_STAGE" \
   -o "$BUILD/base-proto.apk" "$BUILD/resources.zip"
+resource_namespace="$("$AAPT2" dump resources "$BUILD/base-proto.apk" | sed -n 's/^Package name=\([^ ]*\).*/\1/p' | head -n 1)"
+[[ "$resource_namespace" == "$R_NAMESPACE" ]] || \
+  die "Release resource namespace verification failed: expected $R_NAMESPACE, found ${resource_namespace:-none}"
 
 find "$SOURCE/android/src" "$BUILD/gen" -name '*.java' -print | sort > "$BUILD/sources.txt"
 "$JAVA_HOME/bin/javac" -encoding UTF-8 --release 8 -classpath "$PLATFORM" -d "$BUILD/classes" @"$BUILD/sources.txt"

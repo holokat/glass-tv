@@ -1,6 +1,6 @@
 # Install Glass TV on your Android TV
 
-This kit contains a signed local release candidate, not a published Play release. Use the APK for direct installation. The AAB is for Google Play and cannot be installed directly.
+This kit contains a signed testing prerelease. It has not been submitted to Google Play. Use the APK for direct installation. The AAB is for Google Play and cannot be installed directly.
 
 Requires Android TV 8.0 (API 26) or later, Python 3 on your computer, and Google's [Android SDK platform-tools](https://developer.android.com/tools/releases/platform-tools). Use the APK, `release.json`, and installer from the same trusted release folder. The checksum detects mismatched or damaged files; a checksum supplied alongside an untrusted download does not establish publisher identity. Android verifies the APK signature during installation.
 

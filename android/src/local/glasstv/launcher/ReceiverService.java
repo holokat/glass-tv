@@ -25,6 +25,7 @@ public final class ReceiverService extends Service implements LocalSyncServer.De
   }
 
   static void start(Context context) {
+    if (!ReceiverStartupPolicy.isReceiverEnabled(context)) return;
     try {
       context.startForegroundService(new Intent(context, ReceiverService.class));
     } catch (IllegalStateException | SecurityException unavailable) {
@@ -32,16 +33,26 @@ public final class ReceiverService extends Service implements LocalSyncServer.De
     }
   }
 
+  static void stop(Context context) {
+    context.stopService(new Intent(context, ReceiverService.class));
+  }
+
   @Override
   public void onCreate() {
     super.onCreate();
-    showForeground("Starting local receiver");
     movieLibrary = new MovieLibraryController(this);
     server = new LocalSyncServer(this, this, movieLibrary, this);
+    if (ReceiverStartupPolicy.isReceiverEnabled(this)) showForeground("Starting local receiver");
   }
 
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
+    if (!ReceiverStartupPolicy.isReceiverEnabled(this)) {
+      stopForeground(true);
+      stopSelf(startId);
+      return START_NOT_STICKY;
+    }
+    showForeground("Starting local receiver");
     server.start();
     return START_STICKY;
   }
@@ -51,6 +62,20 @@ public final class ReceiverService extends Service implements LocalSyncServer.De
 
   LocalSyncServer server() { return server; }
   MovieLibraryController movieLibrary() { return movieLibrary; }
+
+  /** Applies a Settings choice immediately while preserving paired credentials and imported media. */
+  void setReceiverEnabled(boolean enabled) {
+    if (enabled) {
+      showForeground("Starting local receiver");
+      server.start();
+      return;
+    }
+    server.stop();
+    stopForeground(true);
+    // A bound launcher may keep this object alive briefly. stopSelf prevents it from surviving
+    // after that binding is released, and the stopped server cannot accept companion requests.
+    stopSelf();
+  }
 
   void attach(LocalSyncServer.DeviceModel model) { attachment.attach(model); }
 
@@ -68,6 +93,7 @@ public final class ReceiverService extends Service implements LocalSyncServer.De
 
   @Override
   public void onListenerStateChanged(boolean listening, String errorClass) {
+    if (!ReceiverStartupPolicy.isReceiverEnabled(this)) return;
     showForeground(
         listening
             ? "Local receiver is available"

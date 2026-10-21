@@ -339,7 +339,7 @@ final class MovieLibraryController {
     LinearLayout tile=new LinearLayout(overlay.getContext()); tile.setOrientation(LinearLayout.VERTICAL); tile.setPadding(dp(8),dp(8),dp(8),dp(14)); tile.setFocusable(true); tile.setClickable(true); tile.setBackground(tileBackground(false)); tile.setContentDescription(item.title); tile.setTag(item.id); tile.setEnabled(enabled);
     tile.setAlpha(enabled ? 1f : .52f);
     tile.setOnFocusChangeListener((view, focused) -> { view.setBackground(tileBackground(focused)); view.setScaleX(focused ? 1.04f : 1f); view.setScaleY(focused ? 1.04f : 1f); });
-    ImageView image=new ImageView(overlay.getContext()); image.setScaleType(ImageView.ScaleType.CENTER_CROP); int movieIcon=overlay.getResources().getIdentifier("movies","drawable",overlay.getContext().getPackageName()); if(movieIcon!=0) image.setImageResource(movieIcon); tile.addView(image,new LinearLayout.LayoutParams(dp(190),dp(220)));
+    ImageView image=new ImageView(overlay.getContext()); image.setScaleType(ImageView.ScaleType.CENTER_CROP); int movieIcon=DrawableResources.id(overlay.getContext(),"movies"); if(movieIcon!=0) image.setImageResource(movieIcon); tile.addView(image,new LinearLayout.LayoutParams(dp(190),dp(220)));
     TextView label=text(item.title + details(item),16); label.setMaxLines(2); tile.addView(label,new LinearLayout.LayoutParams(dp(190),dp(54))); tile.setOnClickListener(v -> queue(item));
     GridLayout.LayoutParams lp=new GridLayout.LayoutParams(); lp.width=dp(210); lp.height=dp(310); grid.addView(tile,lp);
     File poster=posterFile(item.posterId); if(poster == null || !poster.isFile()) return;
