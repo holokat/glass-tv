@@ -79,7 +79,6 @@
     }
     const tab=event.target.closest('[data-collection]');
     if(tab) {collection=tab.dataset.collection;render();}
-    if(event.target.closest('[data-movie-reset]')) {favorites.clear();watched.clear();search.value='';sort.value='curated';collection='all';render();feedback.textContent='Demo reset. Select a poster to explore.';}
     if(event.target.closest('[data-movie-show-all]')) {search.value='';collection='all';render();search.focus();}
     if(event.target.closest('[data-movie-close]')) dialog.close();
   });
