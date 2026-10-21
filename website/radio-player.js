@@ -275,7 +275,7 @@
         button.setAttribute('aria-pressed', String(isPlaying));
         const action = isPlaying || isLoading ? 'Pause' : state === 'unconfigured' && isCurrent ? 'Station configuration required for' : 'Play';
         button.setAttribute('aria-label', `${action} ${describeStation(item)}`);
-        button.querySelector('.radio-control-icon').src = isPlaying || isLoading ? 'assets/ui-icons/pause.png' : 'assets/ui-icons/play.png';
+        button.querySelector('.radio-control-icon').src = isPlaying || isLoading ? 'assets/ui-icons/pause-solid.png' : 'assets/ui-icons/play-solid.png';
       });
       if (!station) status.textContent = 'Live radio';
       else if (state === 'unconfigured') status.textContent = `${station.genre} station is not configured.`;
@@ -303,7 +303,7 @@
       control.className = 'radio-control';
       const icon = document.createElement('img');
       icon.className = 'icon radio-control-icon';
-      icon.src = 'assets/ui-icons/play.png';
+      icon.src = 'assets/ui-icons/play-solid.png';
       icon.alt = '';
       control.append(icon);
       circle.append(artwork, control);
