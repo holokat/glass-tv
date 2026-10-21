@@ -11,6 +11,9 @@ public final class PlaylistStoreTransactionChecks {
     try {
       PlaylistStore store = new PlaylistStore(directory);
       PlaylistStore.Playlist initial = store.get();
+      check(initial.defaultBackgroundEnabled, "fresh installs use bundled background");
+      check(!BackgroundPlaybackPolicy.canKeepVideo(initial, "video-1"), "removed video cannot keep playing");
+      initial.defaultBackgroundEnabled = false;
       initial.revision = 41;
       initial.intervalSeconds = 600;
       initial.shuffle = true;
@@ -26,12 +29,19 @@ public final class PlaylistStoreTransactionChecks {
       initial.apps = AppsSettings.validate(new JSONObject().put("netflixEnabled", true));
       initial.weather = WeatherSettings.validate(new JSONObject().put("enabled", false));
       store.replace(initial);
+      check(BackgroundPlaybackPolicy.canKeepVideo(initial, "video-1"), "selected video may keep playing");
+      PlaylistStore.Playlist changedLoop = store.get();
+      changedLoop.images.add(new PlaylistStore.Item("video-2", "Another video", "video"));
+      changedLoop.loopVideoId = "video-2";
+      check(!BackgroundPlaybackPolicy.canKeepVideo(changedLoop, "video-1"), "new loop replaces previous video even if retained in rotation");
+      check(BackgroundPlaybackPolicy.canKeepVideo(changedLoop, "video-2"), "new loop is playable");
 
       PlaylistStore.Playlist appsCommitted =
           store.updateSettings(
               next -> {
                 next.apps = AppsSettings.validate(new JSONObject().put("netflixEnabled", false));
                 // A caller attempting stale unrelated changes cannot alter them.
+                next.defaultBackgroundEnabled = true;
                 next.intervalSeconds = 10;
                 next.images.clear();
                 next.selectedInputId = "different-input";
@@ -62,6 +72,7 @@ public final class PlaylistStoreTransactionChecks {
       check(!afterRejected.apps.getBoolean("netflixEnabled"), "rejected transaction leaves Apps unchanged");
       check(afterRejected.weather.getBoolean("enabled"), "rejected transaction leaves Weather unchanged");
       assertUnrelatedState(afterRejected);
+      assertUnrelatedState(new PlaylistStore(directory).get());
       System.out.println("PlaylistStoreTransactionChecks passed");
     } finally {
       delete(directory);
@@ -69,6 +80,7 @@ public final class PlaylistStoreTransactionChecks {
   }
 
   private static void assertUnrelatedState(PlaylistStore.Playlist playlist) {
+    check(!playlist.defaultBackgroundEnabled, "explicit background removal survives copies, settings changes and restart");
     check(playlist.intervalSeconds == 600, "transaction preserves interval");
     check(playlist.shuffle, "transaction preserves shuffle");
     check("hdmi-4".equals(playlist.selectedInputId), "transaction preserves selected input");

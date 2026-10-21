@@ -1,0 +1,3 @@
+# Build-only tooling for the Ubuntu 24.04 x86_64 AppImage preview.
+# PySide6-Essentials remains the only runtime dependency in ../requirements.txt.
+Nuitka==4.1.1

@@ -86,6 +86,7 @@ struct TVProfiles: Codable {
             merged.append(contentsOf: result.photos.filter { photo in !merged.contains(where: { $0.digest == photo.digest }) })
         }
         result.photos = merged
+        _ = DefaultBackground.seed(into: &result)
         return result
     }
 
@@ -114,7 +115,33 @@ struct TVProfiles: Codable {
             copy.inRotation = false
             return copy
         }
+        // A new TV can share the bundled record without inheriting another TV's
+        // stored-only state. Select it only when there are no imported choices.
+        if settings.defaultBackgroundEnabled,
+           !settings.photos.contains(where: { !DefaultBackground.isBundled($0) }) {
+            for index in settings.photos.indices where DefaultBackground.isBundled(settings.photos[index]) {
+                settings.photos[index].inRotation = true
+            }
+        }
+        _ = DefaultBackground.seed(into: &settings)
         return settings
+    }
+
+    /// Profiles own their rotation choices, so every profile receives the bundled
+    /// item independently. Existing choices stay intact and the default remains
+    /// stored-only when that profile already has media.
+    @discardableResult
+    mutating func seedDefaultBackgrounds() -> Bool {
+        var changed = false
+        for index in profiles.indices {
+            changed = DefaultBackground.seed(into: &profiles[index].settings) || changed
+        }
+        if var pending {
+            let pendingChanged = DefaultBackground.seed(into: &pending.settings)
+            self.pending = pending
+            changed = pendingChanged || changed
+        }
+        return changed
     }
 
     static func migratingLegacy(_ settings: LocalSettings, host: String, deviceID: String) -> TVProfiles {
@@ -147,15 +174,27 @@ struct TVProfiles: Codable {
         var updatedFirst = profiles.settings(for: first)
         updatedFirst.shuffle = true
         profiles.save(updatedFirst, for: first.id)
+        var freshDefault = LocalSettings()
+        let seededFresh = DefaultBackground.seed(into: &freshDefault)
+        let reseededFresh = DefaultBackground.seed(into: &freshDefault)
+        var existingChoices = LocalSettings(photos: [one])
+        let seededExisting = DefaultBackground.seed(into: &existingChoices)
+        let defaultOnlyProfile = TVProfiles(sharedPhotos: [DefaultBackground.photo(inRotation: false)]).freshSettings()
+        var removedDefault = freshDefault
+        removedDefault.defaultBackgroundEnabled = false
+        removedDefault.photos.removeAll(where: DefaultBackground.isBundled)
+        let reseededRemoved = DefaultBackground.seed(into: &removedDefault)
+        var duplicateDefault = LocalSettings(photos: [DefaultBackground.photo(inRotation: true), DefaultBackground.photo(inRotation: false)])
+        _ = DefaultBackground.seed(into: &duplicateDefault)
         return migrated.activeID == "device-legacy"
             && migrated.profiles.first?.descriptor.host == "192.0.2.9"
             && migrated.profiles.first?.settings.shuffle == true
             && migrated.profiles.first?.settings.layoutDraft.clock == LayoutPosition(x: 0.1, y: 0.2)
             && first.descriptor.displayName == "Living room"
             && second.descriptor.displayName == "Bedroom"
-            && mergedSecond.photos.map(\.digest) == ["one", "two"]
-            && !mergedSecond.photos[0].inRotation && !mergedSecond.photos[1].inRotation
-            && fresh.photos.map(\.inRotation) == [false, false]
+            && mergedSecond.photos.map(\.digest) == ["one", "two", DefaultBackground.digest]
+            && !mergedSecond.photos[0].inRotation && !mergedSecond.photos[1].inRotation && !mergedSecond.photos[2].inRotation
+            && fresh.photos.map(\.inRotation) == [false, false, false]
             && !fresh.hasConfiguredApps && !fresh.hasConfiguredWeather && !fresh.hasConfiguredLayout
             && profiles.activeIsPending && profiles.pending?.host == "192.0.2.12"
             && profiles.profiles.first(where: { $0.id == first.id })?.settings.shuffle == true
@@ -163,5 +202,12 @@ struct TVProfiles: Codable {
             && profiles.profile(host: "192.0.2.11")?.id == second.id
             && profiles.profileIndex(deviceID: "device-living") == 0
             && profiles.profileIndex(deviceID: "unknown") == nil
+            && seededFresh && !reseededFresh
+            && freshDefault.photos.count == 1 && freshDefault.photos[0].inRotation
+            && seededExisting && existingChoices.photos.map(\.digest) == ["one", DefaultBackground.digest]
+            && !existingChoices.photos[1].inRotation
+            && defaultOnlyProfile.photos.count == 1 && defaultOnlyProfile.photos[0].inRotation
+            && reseededRemoved && removedDefault.photos.count == 1 && !removedDefault.photos[0].inRotation
+            && duplicateDefault.photos.count == 1 && duplicateDefault.photos[0].uuid == DefaultBackground.uuid
     }
 }

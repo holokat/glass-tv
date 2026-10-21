@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Glass TV
+Comment=Certificate discovery preview for Glass TV receivers
+Exec=glasstv-linux
+Icon=glass-tv
+Terminal=false
+Categories=Utility;Network;
+StartupNotify=true

@@ -1,0 +1,10 @@
+[project]
+name = "glasstv-linux"
+version = "0.1.0"
+description = "Glass TV Linux companion discovery milestone"
+requires-python = ">=3.10,<3.16"
+dependencies = ["PySide6-Essentials==6.12.0"]
+
+[project.scripts]
+glasstv-linux-discover = "glasstv_linux.__main__:main"
+glasstv-linux = "glasstv_linux.__main__:main"

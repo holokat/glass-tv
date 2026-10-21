@@ -144,3 +144,9 @@ TV settings use the same persisted `apps` and `weather` documents as the compani
 The Mac adopts authenticated receiver Apps and Weather values unless that section has a pending local edit. Pending flags are persisted per TV profile. A pending Mac edit wins for its entire section, preserving the other receiver sections; this is section-level conflict resolution, not a merge of individual fields within Apps or Weather. Exact readback acknowledges the edit and clears its pending flag. Without a pending edit, reconnecting does not publish stale companion preferences.
 
 Apps and Weather updates read the latest revision before writing and retry one revision conflict with a fresh snapshot. Failed or unsupported Weather delivery remains pending without an immediate retry loop. Layout drafts remain staged until Update TV. No new unauthenticated configuration route is introduced.
+
+## Bundled background
+
+`defaultBackgroundEnabled` is an optional strict Boolean in playlist requests. Omission preserves the receiver value; legacy storage and fresh receivers default to true. It is included in status and persisted with the playlist. With an empty playlist, true displays the bundled reef image and false displays a blank black background. Active images/videos always take precedence. Settings-only transactions preserve this value.
+
+The companion keeps the bundled reef image available in Media. Explicit Set as background selects one item (photo or looping video); Remove background removes that selection without deleting its file and disables the empty-playlist fallback. Choosing a different loop replaces the previous video even when that video is retained in rotation.

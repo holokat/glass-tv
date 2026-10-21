@@ -38,3 +38,11 @@ node_modules/
 *.log
 *.apk
 *.idsig
+
+# Linux local environments and generated packages.
+__pycache__/
+*.py[cod]
+.venv/
+work/
+builds/
+*.AppImage

@@ -267,6 +267,8 @@ struct Playlist: Codable {
     var slideshowEnabled: Bool? = nil
     var fitMode: FitMode? = nil
     var showTVInterface: Bool? = nil
+    /// When absent, receivers keep their existing fallback behavior.
+    var defaultBackgroundEnabled: Bool? = nil
     var weather: WeatherSettings? = nil
     var apps: AppsSettings? = nil
     /// Optional placement data. Older receivers ignore this field and retain their
@@ -336,6 +338,11 @@ struct LocalSettings: Codable {
     var fitMode: FitMode
     var showTVInterface: Bool
     var hasConfiguredShowTVInterface: Bool
+    /// Lets an empty local rotation explicitly replace a receiver's default fallback.
+    var defaultBackgroundEnabled: Bool
+    /// Set only by the Media background actions so a deliberate choice can replace
+    /// receiver-only media without changing normal reconnect reconciliation.
+    var pendingBackgroundReplacement: Bool
     var photos: [LocalPhoto]
     var weather: WeatherSettings
     var hasConfiguredWeather: Bool
@@ -352,16 +359,16 @@ struct LocalSettings: Codable {
     var appliedLayout: LayoutSettings
     var hasConfiguredLayout: Bool
 
-    init(intervalSeconds: Int = 300, shuffle: Bool = false, selectedInputId: String? = nil, hasConfiguredInput: Bool = false, videoPlayback: VideoPlayback = .cycle, loopVideoId: String? = nil, muteVideos: Bool = true, slideshowEnabled: Bool = true, fitMode: FitMode = .fill, showTVInterface: Bool = true, hasConfiguredShowTVInterface: Bool = false, photos: [LocalPhoto] = [], weather: WeatherSettings = WeatherSettings(), hasConfiguredWeather: Bool = false, pendingWeatherSync: Bool = false, apps: AppsSettings = AppsSettings(), hasConfiguredApps: Bool = false, pendingAppsSync: Bool = false, pendingInputSync: Bool = false, layoutDraft: LayoutSettings = LayoutSettings(), appliedLayout: LayoutSettings = LayoutSettings(), hasConfiguredLayout: Bool = false) {
+    init(intervalSeconds: Int = 300, shuffle: Bool = false, selectedInputId: String? = nil, hasConfiguredInput: Bool = false, videoPlayback: VideoPlayback = .cycle, loopVideoId: String? = nil, muteVideos: Bool = true, slideshowEnabled: Bool = true, fitMode: FitMode = .fill, showTVInterface: Bool = true, hasConfiguredShowTVInterface: Bool = false, defaultBackgroundEnabled: Bool = true, pendingBackgroundReplacement: Bool = false, photos: [LocalPhoto] = [], weather: WeatherSettings = WeatherSettings(), hasConfiguredWeather: Bool = false, pendingWeatherSync: Bool = false, apps: AppsSettings = AppsSettings(), hasConfiguredApps: Bool = false, pendingAppsSync: Bool = false, pendingInputSync: Bool = false, layoutDraft: LayoutSettings = LayoutSettings(), appliedLayout: LayoutSettings = LayoutSettings(), hasConfiguredLayout: Bool = false) {
         self.intervalSeconds = intervalSeconds; self.shuffle = shuffle; self.selectedInputId = selectedInputId
         self.hasConfiguredInput = hasConfiguredInput
-        self.videoPlayback = videoPlayback; self.loopVideoId = loopVideoId; self.muteVideos = muteVideos; self.slideshowEnabled = slideshowEnabled; self.fitMode = fitMode; self.showTVInterface = showTVInterface; self.hasConfiguredShowTVInterface = hasConfiguredShowTVInterface; self.photos = photos; self.weather = weather; self.hasConfiguredWeather = hasConfiguredWeather
+        self.videoPlayback = videoPlayback; self.loopVideoId = loopVideoId; self.muteVideos = muteVideos; self.slideshowEnabled = slideshowEnabled; self.fitMode = fitMode; self.showTVInterface = showTVInterface; self.hasConfiguredShowTVInterface = hasConfiguredShowTVInterface; self.defaultBackgroundEnabled = defaultBackgroundEnabled; self.pendingBackgroundReplacement = pendingBackgroundReplacement; self.photos = photos; self.weather = weather; self.hasConfiguredWeather = hasConfiguredWeather
         self.pendingWeatherSync = pendingWeatherSync
         self.apps = apps; self.hasConfiguredApps = hasConfiguredApps; self.pendingAppsSync = pendingAppsSync; self.pendingInputSync = pendingInputSync
         self.layoutDraft = layoutDraft; self.appliedLayout = appliedLayout; self.hasConfiguredLayout = hasConfiguredLayout
     }
 
-    private enum CodingKeys: String, CodingKey { case intervalSeconds, shuffle, selectedInputId, hasConfiguredInput, videoPlayback, loopVideoId, muteVideos, slideshowEnabled, fitMode, showTVInterface, hasConfiguredShowTVInterface, photos, weather, hasConfiguredWeather, pendingWeatherSync, apps, hasConfiguredApps, pendingAppsSync, pendingInputSync, layoutDraft, appliedLayout, hasConfiguredLayout }
+    private enum CodingKeys: String, CodingKey { case intervalSeconds, shuffle, selectedInputId, hasConfiguredInput, videoPlayback, loopVideoId, muteVideos, slideshowEnabled, fitMode, showTVInterface, hasConfiguredShowTVInterface, defaultBackgroundEnabled, pendingBackgroundReplacement, photos, weather, hasConfiguredWeather, pendingWeatherSync, apps, hasConfiguredApps, pendingAppsSync, pendingInputSync, layoutDraft, appliedLayout, hasConfiguredLayout }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         intervalSeconds = try values.decodeIfPresent(Int.self, forKey: .intervalSeconds) ?? 300
@@ -375,6 +382,8 @@ struct LocalSettings: Codable {
         fitMode = try values.decodeIfPresent(FitMode.self, forKey: .fitMode) ?? .fill
         showTVInterface = try values.decodeIfPresent(Bool.self, forKey: .showTVInterface) ?? true
         hasConfiguredShowTVInterface = try values.decodeIfPresent(Bool.self, forKey: .hasConfiguredShowTVInterface) ?? false
+        defaultBackgroundEnabled = try values.decodeIfPresent(Bool.self, forKey: .defaultBackgroundEnabled) ?? true
+        pendingBackgroundReplacement = try values.decodeIfPresent(Bool.self, forKey: .pendingBackgroundReplacement) ?? false
         photos = try values.decodeIfPresent([LocalPhoto].self, forKey: .photos) ?? []
         weather = try values.decodeIfPresent(WeatherSettings.self, forKey: .weather) ?? WeatherSettings()
         hasConfiguredWeather = try values.decodeIfPresent(Bool.self, forKey: .hasConfiguredWeather) ?? false
@@ -449,6 +458,7 @@ enum ProtocolSelfTest {
         let disabledSettings = try JSONDecoder().decode(LocalSettings.self, from: JSONEncoder().encode(LocalSettings(showTVInterface: false)))
         let receiverDisabled = try JSONDecoder().decode(Playlist.self, from: Data("{\"intervalSeconds\":300,\"shuffle\":false,\"images\":[],\"showTVInterface\":false}".utf8))
         let receiverEnabled = try JSONDecoder().decode(Playlist.self, from: Data("{\"intervalSeconds\":300,\"shuffle\":false,\"images\":[],\"showTVInterface\":true}".utf8))
+        let receiverDefaultBackground = try JSONDecoder().decode(Playlist.self, from: Data("{\"intervalSeconds\":300,\"shuffle\":false,\"images\":[],\"defaultBackgroundEnabled\":false}".utf8))
         let receiverApps = try JSONDecoder().decode(Playlist.self, from: Data("{\"intervalSeconds\":300,\"shuffle\":false,\"images\":[],\"apps\":{\"netflixEnabled\":false,\"radioEnabled\":true,\"hdmiEnabled\":true,\"hdmiStyle\":\"ps5\"}}".utf8))
         let receiverLayout = try JSONDecoder().decode(Playlist.self, from: Data("{\"intervalSeconds\":300,\"shuffle\":false,\"images\":[],\"layout\":{\"version\":1,\"wifiEnabled\":false,\"clock\":{\"x\":0.1,\"y\":0.2}}}".utf8))
         let layoutWire = receiverLayout.layout?.wireObject()
@@ -469,6 +479,8 @@ enum ProtocolSelfTest {
         var dropOrder = AppsSettings(shortcutOrder: AppShortcutCatalog.legacyOrder)
         dropOrder.moveShortcut("netflix", onto: "hdmi", catalog: [])
         dropOrder.moveShortcut("hdmi", onto: "spotify", catalog: [])
+        let defaultBackgroundChecks = DefaultBackground.selfTestsPass()
+        let profileChecks = TVProfiles.selfTestsPass()
         guard sha256Hex(Data("Glass TV".utf8)).count == 64,
               ConversionCache.safetyChecksPass(),
               groupedFingerprint(String(repeating: "a", count: 64)) == "AAAA AAAA AAAA AAAA AAAA AAAA AAAA AAAA AAAA AAAA AAAA AAAA AAAA AAAA AAAA AAAA",
@@ -481,6 +493,8 @@ enum ProtocolSelfTest {
               MovieFileKind.shouldProbe(URL(fileURLWithPath: "/Movies/custom-container.video")),
               !MovieFileKind.shouldProbe(URL(fileURLWithPath: "/Movies/cover.jpg")),
               legacySettings.showTVInterface,
+              legacySettings.defaultBackgroundEnabled,
+              !legacySettings.pendingBackgroundReplacement,
               !legacySettings.hasConfiguredShowTVInterface,
               !legacySettings.hasConfiguredInput,
               !legacySettings.hasConfiguredApps,
@@ -494,6 +508,7 @@ enum ProtocolSelfTest {
               legacySettings.apps.enabledServices.isEmpty,
               legacySettings.apps.shortcutStyle == .minimal,
               legacyPlaylist.showTVInterface == nil,
+              legacyPlaylist.defaultBackgroundEnabled == nil,
               legacyPlaylist.apps == nil,
               legacyPlaylist.layout == nil,
               namedStatus.deviceName == "Living room TV",
@@ -502,6 +517,7 @@ enum ProtocolSelfTest {
               !disabledSettings.showTVInterface,
               receiverDisabled.showTVInterface == false,
               receiverEnabled.showTVInterface == true,
+              receiverDefaultBackground.defaultBackgroundEnabled == false,
               receiverApps.apps == AppsSettings(netflixEnabled: false, radioEnabled: true, hdmiEnabled: true, hdmiStyle: .ps5),
               receiverLayout.layout?.clock == LayoutPosition(x: 0.1, y: 0.2),
               receiverLayout.layout?.wifiEnabled == false,
@@ -534,15 +550,16 @@ enum ProtocolSelfTest {
               TVNetworkRecoveryPolicy.selfTestsPass(),
               WeatherSettings.selfTestsPass(),
               WeatherArtwork.selfTestsPass(),
-              TVProfiles.selfTestsPass(),
+              defaultBackgroundChecks,
+              profileChecks,
               AppDiagnostics.selfTestsPass(),
               encodedSettings?["showTVInterface"] as? Bool == true,
               encodedDisabledSettings?["showTVInterface"] as? Bool == false,
               TVConnectionState.resolve(activity: .checking, isPaired: true, hasCertificateChallenge: false, hasAuthenticatedStatus: true) == .connected,
               TVConnectionState.resolve(activity: .checking, isPaired: true, hasCertificateChallenge: false, hasAuthenticatedStatus: false) == .checking,
-              TVConnectionActionPolicy.canSync(state: .connected, isPaired: true, hasAuthenticatedStatus: true, isBusy: false, hasActiveMedia: true),
-              !TVConnectionActionPolicy.canSync(state: .checking, isPaired: true, hasAuthenticatedStatus: true, isBusy: false, hasActiveMedia: true),
-              !TVConnectionActionPolicy.canSync(state: .connected, isPaired: true, hasAuthenticatedStatus: true, isBusy: true, hasActiveMedia: true),
+              TVConnectionActionPolicy.canSync(state: .connected, isPaired: true, hasAuthenticatedStatus: true, isBusy: false),
+              !TVConnectionActionPolicy.canSync(state: .checking, isPaired: true, hasAuthenticatedStatus: true, isBusy: false),
+              !TVConnectionActionPolicy.canSync(state: .connected, isPaired: true, hasAuthenticatedStatus: true, isBusy: true),
               !TVConnectionActionPolicy.canAutoRefresh(isPaired: true, isBusy: false, hasPairingChallenge: true, isLocallyDisconnected: false),
               !TVConnectionActionPolicy.canAutoRefresh(isPaired: true, isBusy: false, hasPairingChallenge: false, isLocallyDisconnected: true),
               !TVConnectionActionPolicy.canAutoRefresh(isPaired: true, isBusy: true, hasPairingChallenge: false, isLocallyDisconnected: false) else { throw SelfTestError.failed }

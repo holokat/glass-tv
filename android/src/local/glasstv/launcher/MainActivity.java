@@ -102,6 +102,7 @@ public final class MainActivity extends Activity
         }
       };
   private GlassLayout layout;
+  private FrostedBackdrop frostedBackdrop;
   private WallpaperView wallpaper;
   private WeatherController weather;
   private WeatherWidget weatherWidget;
@@ -181,12 +182,14 @@ public final class MainActivity extends Activity
             weather.stop();
             if (layout != null) layout.stopClock();
             if (wallpaper != null) wallpaper.setForeground(false);
+            if (frostedBackdrop != null) frostedBackdrop.setActive(false);
             main.removeCallbacks(hideTvInterface);
             tvInterfaceRevealed = true;
             updateLauncherInterfaceVisibility();
           } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction()) && foreground && launcherInitialized) {
             screenAwake = true;
             wallpaper.setForeground(true);
+            if (frostedBackdrop != null) frostedBackdrop.setActive(true);
             layout.startClock();
             weather.start();
             if (playlist != null && playlist.slideshowEnabled) advanceWallpaper();
@@ -281,6 +284,8 @@ public final class MainActivity extends Activity
     wallpaper = new WallpaperView(this);
     wallpaper.setFitMode("fit".equals(playlist.fitMode));
     layout = new GlassLayout(this);
+    frostedBackdrop = new FrostedBackdrop(layout);
+    frostedBackdrop.setActive(foreground && screenAwake);
     layout.addView(
         wallpaper,
         0,
@@ -363,6 +368,7 @@ public final class MainActivity extends Activity
   private void resumeForegroundLauncher() {
     if (!launcherInitialized) return;
     wallpaper.setForeground(true);
+    if (frostedBackdrop != null) frostedBackdrop.setActive(true);
     layout.startClock();
     weather.start();
     if (playlist != null && playlist.slideshowEnabled) advanceWallpaper();
@@ -399,6 +405,7 @@ public final class MainActivity extends Activity
       layout.stopNavigationSounds();
     }
     if (wallpaper != null) wallpaper.setForeground(false);
+    if (frostedBackdrop != null) frostedBackdrop.setActive(false);
     if (receiverService != null) receiverService.detach(this);
     if (receiverBound) {
       unbindService(receiverConnection);
@@ -428,6 +435,7 @@ public final class MainActivity extends Activity
     releaseVideo(true);
     if (weather != null) weather.destroy();
     if (tvSettings != null) tvSettings.destroy();
+    if (frostedBackdrop != null) frostedBackdrop.close();
     decode.shutdownNow();
     settingsWork.shutdownNow();
     super.onDestroy();
@@ -517,7 +525,21 @@ public final class MainActivity extends Activity
   public void suspendAmbientForRadio() {
     ambientSuspendedForRadio = true;
     main.removeCallbacks(rotate);
-    releaseVideo(true);
+    // Preserve the current video frame or photo underneath the transparent Radio screen.
+    // Radio owns audio; ambient playback must remain silent, including pending preparation.
+    if (player != null) {
+      try {
+        player.setVolume(0f, 0f);
+        if ("playing".equals(videoState)) {
+          player.pause();
+          videoState = "paused";
+        }
+        player.setScreenOnWhilePlaying(false);
+      } catch (IllegalStateException ignored) {}
+    }
+    // Request the direct SurfaceView copy while Radio has not yet added any UI to the window.
+    if (frostedBackdrop != null && activeMedia != null && activeMedia.isVideo())
+      frostedBackdrop.captureVideoNow();
     weather.stop();
     updateLauncherInterfaceVisibility();
   }
@@ -531,8 +553,30 @@ public final class MainActivity extends Activity
     if (playlist != null) weather.setConfig(playlist.weather);
     weatherWidget.setWeather(weather);
     weather.start();
-    if (playlist != null && playlist.slideshowEnabled) advanceWallpaper();
-    else showPausedInitialMedia();
+    boolean retained = false;
+    if (playlist != null && activeMedia != null) {
+      for (PlaylistStore.Item item : playlist.images) {
+        if (item.id.equals(activeMedia.id)) { retained = true; break; }
+      }
+    }
+    if (retained && player != null && "paused".equals(videoState)) {
+      try {
+        float volume = playlist.muteVideos ? 0f : 1f;
+        player.setVolume(volume, volume);
+        player.setLooping("loop".equals(playlist.videoPlayback));
+        if (playlist.slideshowEnabled) {
+          player.setScreenOnWhilePlaying(true);
+          player.start();
+          videoState = "playing";
+        }
+      } catch (IllegalStateException ignored) { retained = false; }
+    }
+    if (!retained) {
+      releaseVideo(true);
+      activeMedia = null;
+      if (playlist != null && playlist.slideshowEnabled) advanceWallpaper();
+      else showPausedInitialMedia();
+    }
     scheduleRotation();
     updateLauncherInterfaceVisibility();
   }
@@ -541,6 +585,9 @@ public final class MainActivity extends Activity
   public boolean isRadioHostForeground() {
     return foreground && screenAwake && !ambientSuspendedForMovie;
   }
+
+  /** Shared, background-only sampling source for launcher and Radio glass treatments. */
+  FrostedBackdrop getFrostedBackdrop() { return frostedBackdrop; }
 
   @Override
   public void restoreAmbientAfterMovie() {
@@ -594,9 +641,9 @@ public final class MainActivity extends Activity
             foreground,
             screenAwake,
             tvInterfaceRevealed);
-    if (layout != null) layout.setChromeVisible(!hidden);
+    if (layout != null) layout.setChromeVisible(!hidden && !ambientSuspendedForRadio);
     if (weatherWidget != null)
-      weatherWidget.setInterfaceVisible(!hidden && !ambientSuspendedForMovie);
+      weatherWidget.setInterfaceVisible(!hidden && !ambientSuspendedForMovie && !ambientSuspendedForRadio);
     main.removeCallbacks(hideTvInterface);
     if (!hidden && canAutoHideTvInterface() && tvInterfaceRevealed)
       main.postDelayed(hideTvInterface, 8_000L);
@@ -638,6 +685,7 @@ public final class MainActivity extends Activity
   private void scheduleRotation() {
     main.removeCallbacks(rotate);
     if (!ambientSuspendedForMovie
+        && !ambientSuspendedForRadio
         && foreground
         && playlist != null
         && playlist.slideshowEnabled
@@ -649,7 +697,7 @@ public final class MainActivity extends Activity
   }
 
   private void advanceWallpaper() {
-    if (ambientSuspendedForMovie || !foreground || playlist == null || !playlist.slideshowEnabled)
+    if (ambientSuspendedForMovie || ambientSuspendedForRadio || !foreground || playlist == null || !playlist.slideshowEnabled)
       return;
     final PlaylistStore.Item item = nextItem();
     if (item != null && item.isVideo()) {
@@ -663,6 +711,7 @@ public final class MainActivity extends Activity
   /** Draws the selected item once while a slideshow is paused, without scheduling rotation. */
   private void showPausedInitialMedia() {
     if (ambientSuspendedForMovie
+        || ambientSuspendedForRadio
         || !foreground
         || playlist == null
         || playlist.slideshowEnabled
@@ -680,18 +729,22 @@ public final class MainActivity extends Activity
     activeMedia = item;
     videoState = "idle";
     final String imageId = item == null ? null : item.id;
+    final boolean useDefaultBackground = playlist == null || playlist.defaultBackgroundEnabled;
     final int generation = decodeGeneration.incrementAndGet();
     decode.execute(
         new Runnable() {
           public void run() {
             final Bitmap decoded =
-                imageId == null ? decodeInitial() : decodePhoto(server.photoFile(imageId));
+                imageId == null ? (useDefaultBackground ? decodeInitial() : blankWallpaper()) : decodePhoto(server.photoFile(imageId));
             if (decoded != null)
               main.post(
                   new Runnable() {
                     public void run() {
                       if (foreground && generation == decodeGeneration.get()) {
                         wallpaper.setBitmap(decoded, animate);
+                        if (frostedBackdrop != null)
+                          frostedBackdrop.setWallpaperSource(
+                              decoded, playlist != null && "fit".equals(playlist.fitMode));
                         updateLauncherInterfaceVisibility();
                       } else decoded.recycle();
                     }
@@ -750,6 +803,7 @@ public final class MainActivity extends Activity
     pendingVideo = item;
     // A photo hides the SurfaceView. Do not bind to its old, soon-to-be-destroyed surface.
     videoSurface.setVisibility(View.VISIBLE);
+    if (frostedBackdrop != null) frostedBackdrop.setVideoSurface(videoSurface);
     updateVideoPresentation();
     startPendingVideo(videoSurface.getHolder());
   }
@@ -781,20 +835,24 @@ public final class MainActivity extends Activity
             videoHeight = height;
             updateVideoPresentation();
           });
-      if (playlist.muteVideos) candidate.setVolume(0f, 0f);
+      if (playlist.muteVideos || ambientSuspendedForRadio) candidate.setVolume(0f, 0f);
       candidate.setOnPreparedListener(
           ready -> {
             if (foreground && generation == playbackGeneration && player == ready) {
-              if (playlist != null && playlist.slideshowEnabled) {
+              if (playlist != null && playlist.slideshowEnabled
+                  && !ambientSuspendedForRadio && !ambientSuspendedForMovie) {
+                ready.setVolume(playlist.muteVideos ? 0f : 1f, playlist.muteVideos ? 0f : 1f);
                 videoState = "playing";
                 ready.setScreenOnWhilePlaying(true);
                 ready.start();
                 updateLauncherInterfaceVisibility();
+                if (frostedBackdrop != null) frostedBackdrop.captureVideoNow();
               } else {
                 // Prepared video keeps its first frame available without waking the TV.
                 videoState = "paused";
                 ready.setScreenOnWhilePlaying(false);
                 updateLauncherInterfaceVisibility();
+                if (frostedBackdrop != null) frostedBackdrop.captureVideoNow();
               }
             } else {
               ready.release();
@@ -803,6 +861,7 @@ public final class MainActivity extends Activity
       candidate.setOnCompletionListener(
           done -> {
             if (playlist.slideshowEnabled
+                && !ambientSuspendedForRadio && !ambientSuspendedForMovie
                 && !"loop".equals(playlist.videoPlayback)
                 && generation == playbackGeneration
                 && player == done) {
@@ -894,6 +953,13 @@ public final class MainActivity extends Activity
       requiredSurfaceGeneration = surfaceGeneration + 1;
       videoSurface.setVisibility(View.GONE);
     }
+    if (frostedBackdrop != null) frostedBackdrop.useWallpaperSource();
+  }
+
+  private static Bitmap blankWallpaper() {
+    Bitmap bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
+    bitmap.eraseColor(Color.BLACK);
+    return bitmap;
   }
 
   private Bitmap decodeInitial() {
@@ -1189,6 +1255,7 @@ public final class MainActivity extends Activity
               ambientSuspendedForRadio = false;
             }
             if (ambientSuspendedForMovie || ambientSuspendedForRadio) {
+              updateLauncherInterfaceVisibility();
               // Keep the latest playlist for restoration, but do not start an ambient decoder
               // behind a movie.
               return;
@@ -1222,6 +1289,7 @@ public final class MainActivity extends Activity
               if (player != null
                   && activeMedia != null
                   && activeMedia.isVideo()
+                  && BackgroundPlaybackPolicy.canKeepVideo(value, activeMedia.id)
                   && "paused".equals(videoState)) {
                 try {
                   player.setScreenOnWhilePlaying(true);
@@ -1230,7 +1298,7 @@ public final class MainActivity extends Activity
                 } catch (Exception ignored) {
                   advanceWallpaper();
                 }
-              } else if (activeMedia == null) {
+              } else {
                 advanceWallpaper();
               }
             } else if (reuseActiveVideo(value)) {
@@ -1248,6 +1316,7 @@ public final class MainActivity extends Activity
     if (player == null
         || activeMedia == null
         || !activeMedia.isVideo()
+        || !BackgroundPlaybackPolicy.canKeepVideo(value, activeMedia.id)
         || !"playing".equals(videoState)) return false;
     int current = -1;
     for (int i = 0; i < value.images.size(); i++)
@@ -1848,14 +1917,16 @@ public final class MainActivity extends Activity
                 : "ps5".equals(hdmiStyle) ? "controller" : "hdmi",
             null,
             cards,
-            "#20252B");
+            "#20252B",
+            owner.frostedBackdrop);
       }
       return new CapsuleBackground(
           owner,
           cards ? shortcut.colorIcon : shortcut.minimalIcon,
           cards ? shortcut.colorFallback : shortcut.minimalFallback,
           cards,
-          shortcut.colorBackground);
+          shortcut.colorBackground,
+          owner.frostedBackdrop);
     }
 
     void armNavigationSound() {
@@ -2427,6 +2498,7 @@ public final class MainActivity extends Activity
     final Context c;
     final boolean cards;
     final String colorBackground;
+    final FrostedBackdrop frostedBackdrop;
     private boolean focused;
 
     CapsuleBackground(Context c, String icon) {
@@ -2434,11 +2506,22 @@ public final class MainActivity extends Activity
     }
 
     CapsuleBackground(Context c, String icon, String fallbackIcon, boolean cards, String colorBackground) {
+      this(c, icon, fallbackIcon, cards, colorBackground, null);
+    }
+
+    CapsuleBackground(
+        Context c,
+        String icon,
+        String fallbackIcon,
+        boolean cards,
+        String colorBackground,
+        FrostedBackdrop frostedBackdrop) {
       this.c = c;
       this.icon = icon;
       this.fallbackIcon = fallbackIcon;
       this.cards = cards;
       this.colorBackground = colorBackground;
+      this.frostedBackdrop = frostedBackdrop;
     }
 
     void setFocused(boolean f) {
@@ -2452,17 +2535,31 @@ public final class MainActivity extends Activity
       float radius = cards ? b.height() * .12f : b.height() / 2f;
       fill.setStyle(Paint.Style.FILL);
       if (cards) fill.setColor(backgroundColor());
-      else fill.setShader(
-          new LinearGradient(
-              0,
-              b.top,
-              0,
-              b.bottom,
-              new int[] {0x8248535f, 0x5821262d},
-              null,
-              Shader.TileMode.CLAMP));
+      else {
+        if (frostedBackdrop != null && getCallback() instanceof View) {
+          View view = (View) getCallback();
+          frostedBackdrop.registerGlassView(view);
+          frostedBackdrop.draw(x, view, r, radius);
+        }
+        // Color comes from the sampled media; the glass overlay remains neutral.
+        fill.setShader(
+            new LinearGradient(
+                0,
+                b.top,
+                0,
+                b.bottom,
+                new int[] {0x2effffff, 0x26000000},
+                null,
+                Shader.TileMode.CLAMP));
+      }
       x.drawRoundRect(r, radius, radius, fill);
       fill.setShader(null);
+      if (!cards) {
+        outline.setStyle(Paint.Style.STROKE);
+        outline.setStrokeWidth(1f);
+        outline.setColor(0x35ffffff);
+        x.drawRoundRect(r, radius, radius, outline);
+      }
       if (icon != null) {
         int id = c.getResources().getIdentifier(icon, "drawable", c.getPackageName());
         if (id == 0 && fallbackIcon != null)

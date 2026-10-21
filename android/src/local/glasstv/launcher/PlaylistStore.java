@@ -32,6 +32,8 @@ final class PlaylistStore {
         boolean slideshowEnabled = true;
         /** Whether the launcher chrome remains continuously visible during ambient playback. */
         boolean showTVInterface = true;
+        /** Explicit removal keeps an empty playlist blank instead of restoring bundled artwork. */
+        boolean defaultBackgroundEnabled = true;
         String fitMode = "fill";
         JSONObject weather = WeatherSettings.defaults();
         JSONObject apps = AppsSettings.defaults();
@@ -84,6 +86,7 @@ final class PlaylistStore {
         next.muteVideos = current.muteVideos;
         next.slideshowEnabled = current.slideshowEnabled;
         next.showTVInterface = current.showTVInterface;
+        next.defaultBackgroundEnabled = current.defaultBackgroundEnabled;
         next.fitMode = current.fitMode;
         next.images.clear();
         next.images.addAll(current.images);
@@ -111,6 +114,7 @@ final class PlaylistStore {
             out.muteVideos = json.optBoolean("muteVideos", true);
             out.slideshowEnabled = json.optBoolean("slideshowEnabled", true);
             out.showTVInterface = json.optBoolean("showTVInterface", true);
+            out.defaultBackgroundEnabled = json.optBoolean("defaultBackgroundEnabled", true);
             out.fitMode = "fit".equals(json.optString("fitMode")) ? "fit" : "fill";
             if (json.optJSONObject("weather") != null) out.weather = WeatherSettings.validate(json.getJSONObject("weather"));
             if (json.optJSONObject("apps") != null) out.apps = AppsSettings.validate(json.getJSONObject("apps"));
@@ -137,6 +141,7 @@ final class PlaylistStore {
             json.put("muteVideos", value.muteVideos);
             json.put("slideshowEnabled", value.slideshowEnabled);
             json.put("showTVInterface", value.showTVInterface);
+            json.put("defaultBackgroundEnabled", value.defaultBackgroundEnabled);
             json.put("fitMode", value.fitMode);
             json.put("weather", value.weather);
             json.put("apps", value.apps);
@@ -159,6 +164,7 @@ final class PlaylistStore {
         out.shuffle = source.shuffle; out.selectedInputId = source.selectedInputId;
         out.videoPlayback = source.videoPlayback; out.loopVideoId = source.loopVideoId; out.muteVideos = source.muteVideos;
         out.slideshowEnabled = source.slideshowEnabled; out.showTVInterface = source.showTVInterface; out.fitMode = source.fitMode;
+        out.defaultBackgroundEnabled = source.defaultBackgroundEnabled;
         out.weather = WeatherSettings.copy(source.weather);
         out.apps = AppsSettings.copy(source.apps);
         out.layout = LauncherLayout.copy(source.layout);

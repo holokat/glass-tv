@@ -82,9 +82,9 @@ enum TVConnectionActionPolicy {
         state == .connected && isPaired && hasAuthenticatedStatus
     }
 
-    static func canSync(state: TVConnectionState, isPaired: Bool, hasAuthenticatedStatus: Bool, isBusy: Bool, hasActiveMedia: Bool) -> Bool {
+    static func canSync(state: TVConnectionState, isPaired: Bool, hasAuthenticatedStatus: Bool, isBusy: Bool) -> Bool {
         isConnected(state: state, isPaired: isPaired, hasAuthenticatedStatus: hasAuthenticatedStatus)
-            && !isBusy && hasActiveMedia
+            && !isBusy
     }
 
     static func canAutoRefresh(isPaired: Bool, isBusy: Bool, hasPairingChallenge: Bool, isLocallyDisconnected: Bool) -> Bool {

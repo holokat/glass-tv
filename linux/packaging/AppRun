@@ -1,0 +1,7 @@
+#!/bin/sh
+# AppImage entry point. Keep user state outside the read-only AppImage.
+set -eu
+
+appdir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+export GLASS_TV_RESOURCE_ROOT="$appdir/usr/lib/glasstv-linux/resources"
+exec "$appdir/usr/lib/glasstv-linux/glasstv-linux" "$@"

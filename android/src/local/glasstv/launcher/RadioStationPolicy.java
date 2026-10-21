@@ -12,16 +12,28 @@ final class RadioStationPolicy {
   static final int MAX_REASONABLE_BITRATE = 10_000;
 
   static final class Station {
-    final String uuid, name, url, genre, country;
+    final String uuid, name, url, genre, country, artworkUrl;
     final int bitrate;
 
     Station(String uuid, String name, String url, String genre, String country, int bitrate) {
+      this(uuid, name, url, genre, country, bitrate, "");
+    }
+
+    Station(
+        String uuid,
+        String name,
+        String url,
+        String genre,
+        String country,
+        int bitrate,
+        String artworkUrl) {
       this.uuid = uuid;
       this.name = name;
       this.url = url;
       this.genre = genre;
       this.country = country;
       this.bitrate = bitrate;
+      this.artworkUrl = artworkUrl == null ? "" : artworkUrl;
     }
   }
 

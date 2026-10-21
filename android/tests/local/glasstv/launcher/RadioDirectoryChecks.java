@@ -9,6 +9,9 @@ import java.util.Set;
 public final class RadioDirectoryChecks {
     public static void main(String[] args) throws Exception {
         RadioDirectory directory = new RadioDirectory();
+        RadioDirectory.Page popular = directory.popular(new RadioDirectory.Cursor());
+        require(!popular.stations.isEmpty(), "popular stations return eligible results");
+        validate(popular.stations, new HashSet<String>());
         RadioDirectory.Cursor cursor = new RadioDirectory.Cursor();
         Set<String> ids = new HashSet<>();
         RadioDirectory.Page first = directory.browseGenre("jazz", cursor);

@@ -1,0 +1,3 @@
+# First approved desktop dependency. It provides the QtCore, QtGui, and
+# QtWidgets modules used by the discovery-only window.
+PySide6-Essentials==6.12.0

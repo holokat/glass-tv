@@ -159,3 +159,8 @@ Apps and Weather must be usable on the TV without pairing a Mac. Use large, read
 Use explicit choices for style and units, focusable controls for numeric adjustments, and move-up/move-down actions for ordering. Keep city and app management separate from appearance settings. City search must distinguish loading, no results and network failure; retain country or region in search results for disambiguation while widget headings remain city-only. Preserve native TV input, system settings and Mac pairing access.
 
 Changes save on the receiver and refresh the launcher. The Mac is an optional editor, not a prerequisite for these controls. Reconnection must reconcile current receiver preferences with pending companion edits and preserve unrelated media, pairing and layout drafts.
+
+
+## Bundled background
+
+Keep the reef image available in Media for every TV profile. Fresh profiles start with it selected; existing media choices remain unchanged. Use native context-menu actions: Set as background and Remove background. Connected, idle actions sync immediately. Offline or busy edits stay saved. Keep the bundled item when it is inactive. Older receivers must be updated before removing the last background.

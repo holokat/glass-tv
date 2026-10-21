@@ -115,6 +115,7 @@ final class ReceiverStatus {
     value.put("muteVideos", playlist.muteVideos);
     value.put("slideshowEnabled", playlist.slideshowEnabled);
     value.put("showTVInterface", playlist.showTVInterface);
+    value.put("defaultBackgroundEnabled", playlist.defaultBackgroundEnabled);
     value.put("fitMode", playlist.fitMode);
     if (playlist.loopVideoId != null) value.put("loopVideoId", playlist.loopVideoId);
     JSONArray images = new JSONArray();

@@ -53,6 +53,15 @@ final class RadioDirectory {
         return search("name=" + encode(name), cursor);
     }
 
+    Page searchByTag(String tag, Cursor cursor) throws Exception {
+        return search("tag=" + encode(tag), cursor);
+    }
+
+    /** Radio Browser's click-count ranking. This is popularity, not an editorial trend claim. */
+    Page popular(Cursor cursor) throws Exception {
+        return search("", cursor);
+    }
+
     List<RadioStationPolicy.Station> favorites(List<String> uuids) throws Exception {
         if (uuids.isEmpty()) return Collections.emptyList();
         String joined = String.join(",", uuids);
@@ -76,7 +85,7 @@ final class RadioDirectory {
             // Request only remaining capacity. Otherwise a partially filled page would
             // discard valid rows while advancing the raw-result offset past them.
             int capacity = PAGE_SIZE - page.size();
-            String path = "/json/stations/search?" + criteria + "&hidebroken=true"
+            String path = "/json/stations/search?" + criteria + (criteria.length() == 0 ? "" : "&") + "hidebroken=true"
                     + "&bitrateMin=" + bucket[0] + "&bitrateMax=" + bucket[1]
                     + "&order=clickcount&reverse=true&limit=" + capacity
                     + "&offset=" + offsets[bucketIndex];
@@ -143,7 +152,8 @@ final class RadioDirectory {
             boolean checked = row.has("lastcheckok") && row.optInt("lastcheckok", 0) == 1;
             if (RadioStationPolicy.qualifies(uuid, name, url, checked, bitrate, safeHttpsUrl(url))) {
                 result.add(new RadioStationPolicy.Station(uuid, name, url,
-                        trim(row.optString("tags", ""), 80), trim(row.optString("country", ""), 48), bitrate));
+                        trim(row.optString("tags", ""), 80), trim(row.optString("country", ""), 48), bitrate,
+                        trim(row.optString("favicon", ""), 2048)));
             }
         }
         return result;
@@ -160,6 +170,11 @@ final class RadioDirectory {
     }
 
     static boolean safePlaybackUrl(String value) {
+        return safePublicHttpsUrl(value);
+    }
+
+    /** HTTPS URL with a resolved public destination, suitable for stream or artwork retrieval. */
+    static boolean safePublicHttpsUrl(String value) {
         if (!safeHttpsUrl(value)) return false;
         try {
             for (InetAddress address : InetAddress.getAllByName(new URI(value).getHost())) {

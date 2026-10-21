@@ -117,17 +117,36 @@ final class CompanionModel: ObservableObject {
             activeProfileID = nil
             didMigrateCredentials = true
         }
+        // Initialize the profile store before normalizing the selected setting so
+        // the remaining initialization can safely use the selected receiver state.
+        profiles = loadedProfiles
+        let seededDefaultBackgrounds = loadedProfiles.seedDefaultBackgrounds()
+        var seededActiveSettings = settings
+        let seededActiveBackground = DefaultBackground.seed(into: &seededActiveSettings)
+        settings = seededActiveSettings
+        if let activeProfileID {
+            loadedProfiles.save(settings, for: activeProfileID)
+        } else if loadedProfiles.activeIsPending {
+            loadedProfiles.pending = PendingTVProfile(host: host, name: pendingTVName, settings: settings)
+            loadedProfiles.mergeSharedPhotos(settings.photos)
+        }
         profiles = loadedProfiles
         savedTVs = loadedProfiles.profiles.map(\.descriptor)
         credential = KeychainStore.load(host: host)
         isLocallyDisconnected = UserDefaults.standard.bool(forKey: Self.manualDisconnectKey(for: host))
         if credential != nil { connectionMessage = "Paired. Refresh to check the TV." }
-        if didMigrateCredentials { try? library.save(loadedProfiles, activeSettings: settings) }
+        if didMigrateCredentials || seededDefaultBackgrounds || seededActiveBackground {
+            try? library.save(loadedProfiles, activeSettings: settings)
+        }
         startNetworkMonitoring()
     }
 
     var photos: [LocalPhoto] { settings.photos }
     var activePhotos: [LocalPhoto] { settings.photos.filter(\.inRotation) }
+    var activeBackgroundID: String? {
+        if settings.videoPlayback == .loop, let loopVideoId = settings.loopVideoId { return loopVideoId }
+        return activePhotos.count == 1 ? activePhotos[0].digest : nil
+    }
     var videos: [LocalPhoto] { settings.photos.filter { $0.mediaKind == .video } }
     var isPaired: Bool { credential != nil }
     var tvConnectionState: TVConnectionState {
@@ -146,8 +165,7 @@ final class CompanionModel: ObservableObject {
             state: tvConnectionState,
             isPaired: isPaired,
             hasAuthenticatedStatus: serverStatus != nil,
-            isBusy: isWorking,
-            hasActiveMedia: !activePhotos.isEmpty
+            isBusy: isWorking
         )
     }
     var canAutoRefresh: Bool {
@@ -848,13 +866,23 @@ final class CompanionModel: ObservableObject {
         if value == .loop, let firstVideo = videos.first(where: \.inRotation) {
             settings.videoPlayback = .loop
             if settings.loopVideoId == nil { settings.loopVideoId = firstVideo.digest }
+            BackgroundSelection.clearBundledSelection(in: &settings)
+            settings.defaultBackgroundEnabled = false
         } else {
             settings.videoPlayback = .cycle
             settings.loopVideoId = nil
         }
         save()
     }
-    func setLoopVideo(_ id: String?) { settings.loopVideoId = id; settings.videoPlayback = id == nil ? .cycle : .loop; save() }
+    func setLoopVideo(_ id: String?) {
+        settings.loopVideoId = id
+        settings.videoPlayback = id == nil ? .cycle : .loop
+        if id != nil {
+            BackgroundSelection.clearBundledSelection(in: &settings)
+            settings.defaultBackgroundEnabled = false
+        }
+        save()
+    }
     func setMuteVideos(_ value: Bool) { settings.muteVideos = value; save() }
     func setSlideshowEnabled(_ value: Bool) { settings.slideshowEnabled = value; save() }
     func setFitMode(_ value: FitMode) { settings.fitMode = value; save() }
@@ -972,6 +1000,38 @@ final class CompanionModel: ObservableObject {
         settings.photos[index].inRotation.toggle()
         if settings.photos[index].inRotation == false, settings.loopVideoId == photo.digest { settings.loopVideoId = nil; settings.videoPlayback = .cycle }
         save()
+    }
+
+    /// Selects exactly one local item for ambient playback. This intentionally
+    /// supersedes receiver-only media on the next Media sync, while reconnects
+    /// alone continue to leave receiver media untouched.
+    func setBackground(_ photo: LocalPhoto) {
+        guard settings.photos.contains(where: { $0.id == photo.id }) else { return }
+        BackgroundSelection.set(photo, in: &settings)
+        save()
+        syncBackgroundChangeIfPossible()
+    }
+
+    /// Removal keeps the item available locally and sends an explicit empty
+    /// rotation when this was the last chosen background.
+    func removeBackground(_ photo: LocalPhoto) {
+        guard settings.photos.contains(where: { $0.id == photo.id }) else { return }
+        BackgroundSelection.remove(photo, in: &settings)
+        save()
+        syncBackgroundChangeIfPossible()
+    }
+
+    private func syncBackgroundChangeIfPossible() {
+        guard isConnected, !isWorking else { return }
+        if !BackgroundSyncPolicy.mayReplace(
+            pendingBackgroundReplacement: settings.pendingBackgroundReplacement,
+            hasActiveMedia: !activePhotos.isEmpty,
+            receiverDefaultBackgroundEnabled: serverStatus?.playlist.defaultBackgroundEnabled
+        ) {
+            connectionMessage = "Update the TV app to remove the background."
+            return
+        }
+        sync()
     }
     func move(_ photo: LocalPhoto, offset: Int) {
         guard let index = settings.photos.firstIndex(of: photo) else { return }
@@ -1250,6 +1310,16 @@ final class CompanionModel: ObservableObject {
             do {
                 var status = try await client.status()
                 let active = activePhotos
+                guard BackgroundSyncPolicy.mayReplace(
+                    pendingBackgroundReplacement: settings.pendingBackgroundReplacement,
+                    hasActiveMedia: !active.isEmpty,
+                    receiverDefaultBackgroundEnabled: status.playlist.defaultBackgroundEnabled
+                ) else {
+                    connectionMessage = "Update the TV app to remove the background."
+                    progress = nil
+                    isWorking = false
+                    return
+                }
                 let stored = Set(status.storedImages.map(\.id))
                 let toUpload = active.filter { !stored.contains($0.digest) }
                 let bytesToUpload = try toUpload.reduce(0) { total, item in
@@ -1272,14 +1342,30 @@ final class CompanionModel: ObservableObject {
                 let showTVInterface = settings.hasConfiguredShowTVInterface ? settings.showTVInterface : (status.playlist.showTVInterface ?? settings.showTVInterface)
                 connectionMessage = "Updating rotation…"
                 do {
-                    _ = try await client.putPlaylist(baseRevision: status.revision, intervalSeconds: settings.intervalSeconds, shuffle: settings.shuffle, images: playlist, selectedInputId: settings.pendingInputSync ? settings.selectedInputId : status.selectedInputId, videoPlayback: settings.videoPlayback, loopVideoId: settings.loopVideoId, muteVideos: settings.muteVideos, slideshowEnabled: settings.slideshowEnabled, fitMode: settings.fitMode, showTVInterface: showTVInterface, weather: settings.pendingWeatherSync ? settings.weather : status.playlist.weather, apps: settings.pendingAppsSync ? settings.apps : status.playlist.apps, layout: status.playlist.layout)
+                    _ = try await client.putPlaylist(baseRevision: status.revision, intervalSeconds: settings.intervalSeconds, shuffle: settings.shuffle, images: playlist, selectedInputId: settings.pendingInputSync ? settings.selectedInputId : status.selectedInputId, videoPlayback: settings.videoPlayback, loopVideoId: settings.loopVideoId, muteVideos: settings.muteVideos, slideshowEnabled: settings.slideshowEnabled, fitMode: settings.fitMode, showTVInterface: showTVInterface, defaultBackgroundEnabled: settings.defaultBackgroundEnabled, weather: settings.pendingWeatherSync ? settings.weather : status.playlist.weather, apps: settings.pendingAppsSync ? settings.apps : status.playlist.apps, layout: status.playlist.layout)
                 } catch let error as GlassTVClientError {
                     guard case .unexpectedResponse(409, _) = error else { throw error }
                     status = try await client.status()
                     let retriedShowTVInterface = settings.hasConfiguredShowTVInterface ? settings.showTVInterface : (status.playlist.showTVInterface ?? settings.showTVInterface)
-                    _ = try await client.putPlaylist(baseRevision: status.revision, intervalSeconds: settings.intervalSeconds, shuffle: settings.shuffle, images: reconciledPlaylist(from: status.playlist), selectedInputId: settings.pendingInputSync ? settings.selectedInputId : status.selectedInputId, videoPlayback: settings.videoPlayback, loopVideoId: settings.loopVideoId, muteVideos: settings.muteVideos, slideshowEnabled: settings.slideshowEnabled, fitMode: settings.fitMode, showTVInterface: retriedShowTVInterface, weather: settings.pendingWeatherSync ? settings.weather : status.playlist.weather, apps: settings.pendingAppsSync ? settings.apps : status.playlist.apps, layout: status.playlist.layout)
+                    _ = try await client.putPlaylist(baseRevision: status.revision, intervalSeconds: settings.intervalSeconds, shuffle: settings.shuffle, images: reconciledPlaylist(from: status.playlist), selectedInputId: settings.pendingInputSync ? settings.selectedInputId : status.selectedInputId, videoPlayback: settings.videoPlayback, loopVideoId: settings.loopVideoId, muteVideos: settings.muteVideos, slideshowEnabled: settings.slideshowEnabled, fitMode: settings.fitMode, showTVInterface: retriedShowTVInterface, defaultBackgroundEnabled: settings.defaultBackgroundEnabled, weather: settings.pendingWeatherSync ? settings.weather : status.playlist.weather, apps: settings.pendingAppsSync ? settings.apps : status.playlist.apps, layout: status.playlist.layout)
                 }
-                progress = 1; serverStatus = try await client.status(); lastStatusCheck = Date(); connectionMessage = "Synced to TV"
+                progress = 1
+                let updatedStatus = try await client.status()
+                serverStatus = updatedStatus
+                lastStatusCheck = Date()
+                if settings.pendingBackgroundReplacement,
+                   activePhotos.isEmpty,
+                   updatedStatus.playlist.defaultBackgroundEnabled != settings.defaultBackgroundEnabled {
+                    // Older receivers ignore the new field. Keep the local action pending
+                    // and avoid claiming that an empty rotation changed their fallback.
+                    connectionMessage = "Update the TV app to sync the default background."
+                } else {
+                    if settings.pendingBackgroundReplacement {
+                        settings.pendingBackgroundReplacement = false
+                        save()
+                    }
+                    connectionMessage = "Synced to TV"
+                }
             } catch {
                 recordConnectionFailure(error, operation: "sync")
                 let failure = connectionFailureMessage(for: error)
@@ -1294,9 +1380,12 @@ final class CompanionModel: ObservableObject {
     private func reconciledPlaylist(from remote: Playlist) -> [PlaylistImage] {
         let knownLocal = Set(settings.photos.map(\.digest))
         var images: [PlaylistImage] = []
-        // Local ordering is authoritative for this Mac's active media. Preserve any remote media this library does not know about.
+        // Local ordering is authoritative for this Mac's active media. Remote-only
+        // media survives ordinary syncs, but a deliberate background action replaces it.
         for photo in activePhotos { images.append(PlaylistImage(id: photo.digest, name: String(photo.name.prefix(255)), kind: photo.mediaKind)) }
-        for item in remote.images where !knownLocal.contains(item.id) { images.append(item) }
+        if !settings.pendingBackgroundReplacement {
+            for item in remote.images where !knownLocal.contains(item.id) { images.append(item) }
+        }
         return images
     }
 

@@ -188,6 +188,9 @@ struct ContentView: View {
         } else {
             MediaCollectionView(items: filteredMedia, selection: $selectedMediaIDs,
                 onToggleRotation: { model.toggleRotation($0) },
+                onSetBackground: { model.setBackground($0) },
+                onRemoveBackground: { model.removeBackground($0) },
+                activeBackgroundID: model.activeBackgroundID,
                 onMove: { model.move($0, offset: $1) })
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -276,7 +279,7 @@ struct TVPreviewFrame: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                if let frameURL = Bundle.main.url(forResource: "samsung", withExtension: "png", subdirectory: "layout-frames"),
+                if let frameURL = Bundle.main.url(forResource: "sony-preview", withExtension: "png"),
                    let frame = NSImage(contentsOf: frameURL) {
                     Image(nsImage: frame).resizable().scaledToFit()
                 }

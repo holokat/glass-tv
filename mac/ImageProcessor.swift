@@ -56,6 +56,7 @@ enum ImageProcessor {
     }
 
     static func url(for photo: LocalPhoto) -> URL {
+        if DefaultBackground.isBundled(photo), let bundled = DefaultBackground.bundledURL { return bundled }
         if photo.mediaKind == .video, let compatible = photo.compatibleVideoURL { return compatible }
         return AppPaths.photos.appendingPathComponent(photo.fileName)
     }

@@ -413,6 +413,10 @@ final class LocalSyncServer {
                 throw new HttpError(400, "invalid", "showTVInterface must be a boolean");
             }
             next.showTVInterface = json.has("showTVInterface") ? json.getBoolean("showTVInterface") : old.showTVInterface;
+            if (json.has("defaultBackgroundEnabled") && !(json.opt("defaultBackgroundEnabled") instanceof Boolean)) {
+                throw new HttpError(400, "invalid", "defaultBackgroundEnabled must be a boolean");
+            }
+            next.defaultBackgroundEnabled = json.has("defaultBackgroundEnabled") ? json.getBoolean("defaultBackgroundEnabled") : old.defaultBackgroundEnabled;
             next.fitMode = json.optString("fitMode", old.fitMode);
             if (!"fill".equals(next.fitMode) && !"fit".equals(next.fitMode)) throw new HttpError(400, "invalid", "Unknown screen fit mode");
             next.loopVideoId = json.isNull("loopVideoId") ? null : json.optString("loopVideoId", null);

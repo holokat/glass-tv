@@ -12,7 +12,7 @@ Movie inspection and video conversion require FFmpeg. If you already use Homebre
 
 ## Source
 
-Glass TV is a macOS companion for a compatible local-network receiver. This repository contains the macOS and Android source, build scripts, artwork, project documentation, protocol definitions, and CC0 navigation sounds. No private signing material is included.
+Glass TV is a macOS companion for a compatible local-network receiver. This repository contains the macOS, Linux and Android source, build scripts, artwork, project documentation, protocol definitions, and CC0 navigation sounds. No private signing material is included.
 
 ## macOS build
 
@@ -25,6 +25,10 @@ On macOS 13 or later on Apple silicon, run:
 The script writes `build/Glass TV.app` by default. Set `GLASS_TV_OUTPUT_DIR` to choose another output directory. It signs ad hoc unless `GLASS_TV_SIGNING_IDENTITY` names a local signing identity. A public release requires a valid Developer ID signature, hardened runtime, secure timestamp, notarization, and stapling.
 
 The build uses the included app artwork and shortcut marks. It requires locally generated Central interface-icon assets; see `CENTRAL_ICONS.md`. Movie inspection, preview-frame extraction, and compatibility conversion look for `ffprobe` and `ffmpeg` in bundled `Resources/Tools`, `/opt/homebrew/bin`, `/usr/local/bin`, and `PATH`. They are not bundled.
+
+## Linux companion
+
+The separate Qt companion is in [`linux/`](linux/README.md). This is an early discovery preview, with an AppImage build recipe under development. Pairing, media management and settings sync are not yet implemented. The native Mac app remains separate.
 
 ## Android source
 

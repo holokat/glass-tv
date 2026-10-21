@@ -7,6 +7,9 @@ struct MediaCollectionView: NSViewRepresentable {
     let items: [LocalPhoto]
     @Binding var selection: Set<UUID>
     let onToggleRotation: (LocalPhoto) -> Void
+    let onSetBackground: (LocalPhoto) -> Void
+    let onRemoveBackground: (LocalPhoto) -> Void
+    let activeBackgroundID: String?
     let onMove: (LocalPhoto, Int) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
@@ -78,6 +81,9 @@ struct MediaCollectionView: NSViewRepresentable {
                 selected: parent.selection.contains(media.id),
                 onSelectionToggle: { [weak self] in self?.toggleSelection(at: indexPath) },
                 onToggleRotation: { [weak self] in self?.parent.onToggleRotation(media) },
+                onSetBackground: { [weak self] in self?.parent.onSetBackground(media) },
+                onRemoveBackground: { [weak self] in self?.parent.onRemoveBackground(media) },
+                isBackgroundActive: parent.activeBackgroundID == media.digest,
                 onMove: { [weak self] offset in self?.parent.onMove(media, offset) }
             )
             return item
@@ -311,9 +317,12 @@ private final class MediaCollectionItem: NSCollectionViewItem {
         selected: Bool,
         onSelectionToggle: @escaping () -> Void,
         onToggleRotation: @escaping () -> Void,
+        onSetBackground: @escaping () -> Void,
+        onRemoveBackground: @escaping () -> Void,
+        isBackgroundActive: Bool,
         onMove: @escaping (Int) -> Void
     ) {
-        tile.configure(media: media, selected: selected, onSelectionToggle: onSelectionToggle, onToggleRotation: onToggleRotation, onMove: onMove)
+        tile.configure(media: media, selected: selected, onSelectionToggle: onSelectionToggle, onToggleRotation: onToggleRotation, onSetBackground: onSetBackground, onRemoveBackground: onRemoveBackground, isBackgroundActive: isBackgroundActive, onMove: onMove)
     }
 
     func setSelection(_ selected: Bool) { tile.setSelection(selected) }
@@ -332,6 +341,8 @@ private final class MediaTileView: NSView {
     private var isHovering = false
     private var onSelectionToggle: (() -> Void)?
     private var onToggleRotation: (() -> Void)?
+    private var onSetBackground: (() -> Void)?
+    private var onRemoveBackground: (() -> Void)?
     private var onMove: ((Int) -> Void)?
 
     override init(frame frameRect: NSRect) {
@@ -410,13 +421,18 @@ private final class MediaTileView: NSView {
         selected: Bool,
         onSelectionToggle: @escaping () -> Void,
         onToggleRotation: @escaping () -> Void,
+        onSetBackground: @escaping () -> Void,
+        onRemoveBackground: @escaping () -> Void,
+        isBackgroundActive: Bool,
         onMove: @escaping (Int) -> Void
     ) {
         self.onSelectionToggle = onSelectionToggle
         self.onToggleRotation = onToggleRotation
+        self.onSetBackground = onSetBackground
+        self.onRemoveBackground = onRemoveBackground
         self.onMove = onMove
         titleLabel.stringValue = media.name
-        detailLabel.stringValue = media.inRotation ? "In rotation" : "Stored only"
+        detailLabel.stringValue = isBackgroundActive ? "Background active" : (media.inRotation ? "In rotation" : "Stored only")
         setAccessibilityLabel(media.name)
         setAccessibilityHelp("\(media.mediaKind == .video ? "Video" : "Photo"). \(detailLabel.stringValue).")
         artwork.image = NSImage(contentsOf: media.mediaKind == .video ? VideoProcessor.previewURL(for: media) : ImageProcessor.url(for: media))
@@ -427,7 +443,7 @@ private final class MediaTileView: NSView {
             durationLabel.stringValue = formattedDuration(media.durationSeconds)
         }
         setSelection(selected)
-        menu = makeMenu(inRotation: media.inRotation)
+        menu = makeMenu(inRotation: media.inRotation, isBackgroundActive: isBackgroundActive)
     }
 
     func setSelection(_ selected: Bool) {
@@ -450,11 +466,22 @@ private final class MediaTileView: NSView {
 
     @objc private func toggleSelection() { onSelectionToggle?() }
     @objc private func toggleRotation() { onToggleRotation?() }
+    @objc private func setBackground() { onSetBackground?() }
+    @objc private func removeBackground() { onRemoveBackground?() }
     @objc private func moveEarlier() { onMove?(-1) }
     @objc private func moveLater() { onMove?(1) }
 
-    private func makeMenu(inRotation: Bool) -> NSMenu {
+    private func makeMenu(inRotation: Bool, isBackgroundActive: Bool) -> NSMenu {
         let menu = NSMenu()
+        let setBackground = NSMenuItem(title: "Set as background", action: #selector(setBackground), keyEquivalent: "")
+        setBackground.target = self
+        menu.addItem(setBackground)
+        if isBackgroundActive {
+            let removeBackground = NSMenuItem(title: "Remove background", action: #selector(removeBackground), keyEquivalent: "")
+            removeBackground.target = self
+            menu.addItem(removeBackground)
+        }
+        menu.addItem(.separator())
         let rotation = NSMenuItem(title: inRotation ? "Remove from rotation" : "Include in rotation", action: #selector(toggleRotation), keyEquivalent: "")
         rotation.target = self
         menu.addItem(rotation)

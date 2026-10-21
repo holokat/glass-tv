@@ -181,7 +181,7 @@ struct GlassTVClient {
         }
     }
 
-    func putPlaylist(baseRevision: Int, intervalSeconds: Int, shuffle: Bool, images: [PlaylistImage], selectedInputId: String?, videoPlayback: VideoPlayback, loopVideoId: String?, muteVideos: Bool, slideshowEnabled: Bool = true, fitMode: FitMode = .fill, showTVInterface: Bool = true, weather: WeatherSettings? = nil, apps: AppsSettings? = nil, layout: LayoutSettings? = nil) async throws -> Int {
+    func putPlaylist(baseRevision: Int, intervalSeconds: Int, shuffle: Bool, images: [PlaylistImage], selectedInputId: String?, videoPlayback: VideoPlayback, loopVideoId: String?, muteVideos: Bool, slideshowEnabled: Bool = true, fitMode: FitMode = .fill, showTVInterface: Bool = true, defaultBackgroundEnabled: Bool? = nil, weather: WeatherSettings? = nil, apps: AppsSettings? = nil, layout: LayoutSettings? = nil) async throws -> Int {
         var value: [String: Any] = ["apiVersion": 1, "baseRevision": baseRevision, "intervalSeconds": intervalSeconds, "shuffle": shuffle,
                                     "images": images.map { ["id": $0.id, "name": $0.name, "kind": ($0.kind ?? .photo).rawValue] },
                                     "videoPlayback": videoPlayback.rawValue, "muteVideos": muteVideos,
@@ -189,6 +189,7 @@ struct GlassTVClient {
                                     "showTVInterface": showTVInterface]
         if let selectedInputId { value["selectedInputId"] = selectedInputId }
         if let loopVideoId { value["loopVideoId"] = loopVideoId }
+        if let defaultBackgroundEnabled { value["defaultBackgroundEnabled"] = defaultBackgroundEnabled }
         if let weather {
             value["weather"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(weather))
         }
