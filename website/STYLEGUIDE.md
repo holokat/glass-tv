@@ -77,7 +77,7 @@ Cap rendering and texture uploads at 30 fps while the video plays; static scenes
 
 ## Titanium heading highlights
 
-Highlight selected phrases only: Your way (blue), possibilities (sage), big screen (rose), frequency (warm titanium). Keep the hero, companion and download headings white, and retain the approved reef footer. Use static 115-degree CSS text gradients with broad pale metallic highlights, no glow, shadows, texture assets or animated shimmer. Base colors: blue #b6c6d4, sage #b7c9be, rose #ceb9b7, warm #c8beb0. Shared title-tint classes in styles.css provide solid-color fallback and CanvasText in forced-color mode. This is the owner's requested restrained color extension to the saved Apple product-page direction; no new shader or dependency.
+Highlight selected phrases only: Your way (blue), possibilities (sage), big screen (rose), frequency (warm titanium). Keep the hero, companion and download headings white, and retain the approved reef footer. Use static left-to-right CSS text gradients with exactly two stops: pale at 0% and the muted palette color at 100%. Do not add a middle highlight, glow, shadows, texture assets or animated shimmer. Base colors: blue #b6c6d4, sage #b7c9be, rose #ceb9b7, warm #c8beb0. Shared title-tint classes in styles.css provide solid-color fallback and CanvasText in forced-color mode. This is the owner's requested restrained color extension to the saved Apple product-page direction; no new shader or dependency.
 
 ## Feature icon motion
 
