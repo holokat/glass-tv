@@ -28,3 +28,33 @@
 .title-tint{background-image:linear-gradient(115deg,var(--title-low) 0%,var(--title-base) 24%,var(--title-high) 45%,var(--title-mid) 65%,var(--title-base) 82%,var(--title-high) 100%);background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 }
 @media (forced-colors:active){.title-tint{background:none;color:CanvasText;-webkit-text-fill-color:CanvasText}}
+
+/* Animate Central icon parts, while the feature's layout and outline stay still. */
+.feature-grid .feature-icon{display:block;overflow:visible}
+.feature-icon .icon-part{transform-box:view-box;transform-origin:12px 12px}
+.feature-icon-radio .antenna{transform-origin:4.06px 6.27px}
+.feature-icon-apps .icon-part{transform-box:fill-box;transform-origin:center}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+.feature-grid article:hover .feature-icon-settings .shell{animation:feature-adjust 850ms var(--ease)}
+.feature-grid article:hover .feature-icon-settings .core{animation:feature-core 850ms var(--ease)}
+.feature-grid article:hover .feature-icon-apps .icon-part{animation:feature-dot 700ms var(--ease)}
+.feature-grid article:hover .feature-icon-apps .dot-two{animation-delay:70ms}
+.feature-grid article:hover .feature-icon-apps .dot-three{animation-delay:140ms}
+.feature-grid article:hover .feature-icon-apps .dot-four{animation-delay:210ms}
+.feature-grid article:hover .feature-icon-image .landscape{animation:feature-landscape 1000ms var(--ease)}
+.feature-grid article:hover .feature-icon-image .sun{animation:feature-picture-sun 1000ms var(--ease)}
+.feature-grid article:hover .feature-icon-weather_sun .rays{animation:feature-rays 1200ms var(--ease)}
+.feature-grid article:hover .feature-icon-radio .antenna{animation:feature-antenna 950ms var(--ease)}
+.feature-grid article:hover .feature-icon-radio .dial-one{animation:feature-dial 850ms var(--ease)}
+.feature-grid article:hover .feature-icon-radio .dial-two{animation:feature-dial 850ms 120ms var(--ease)}
+.feature-grid article:hover .feature-icon-tv .screen{animation:feature-screen 950ms var(--ease)}
+}
+@keyframes feature-adjust{0%,100%{transform:rotate(0)}45%{transform:rotate(15deg)}}
+@keyframes feature-core{0%,100%{transform:scale(1)}45%{transform:scale(.88)}}
+@keyframes feature-dot{0%,100%{transform:translateY(0)}40%{transform:translateY(-1.2px)}}
+@keyframes feature-landscape{0%,100%{transform:translateY(0)}45%{transform:translateY(.8px)}}
+@keyframes feature-picture-sun{0%,100%{transform:translateY(0)}45%{transform:translateY(-.7px)}}
+@keyframes feature-rays{from{transform:rotate(0)}to{transform:rotate(45deg)}}
+@keyframes feature-antenna{0%,100%{transform:rotate(0)}35%{transform:rotate(-9deg)}65%{transform:rotate(2deg)}}
+@keyframes feature-dial{0%,100%{opacity:1}45%{opacity:.4}}
+@keyframes feature-screen{0%,100%{transform:translateY(0)}40%{transform:translateY(-1.35px)}70%{transform:translateY(.2px)}}
