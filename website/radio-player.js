@@ -1,5 +1,5 @@
 (() => {
-  // Verified direct 320 kbps streams; evidence is recorded in radio-sources.json.
+  // Verified direct HTTPS streams; evidence is recorded in radio-sources.json.
   const STATIONS = [
   {
     "id": "edm",
@@ -23,10 +23,10 @@
   },
   {
     "id": "hits",
-    "genre": "Top hits",
-    "name": "Radio Vacanța Fresh",
-    "homepage": "https://www.radiovacanta.ro/live-radio-vacanta-fresh",
-    "streamUrl": "https://stream4.srr.ro:8443/fresh_rv",
+    "genre": "US Top 40",
+    "name": "181.FM Power 181",
+    "homepage": "https://player.181fm.com/?station=181-power",
+    "streamUrl": "https://listen.181fm.com/181-power_128k.mp3",
     "artwork": "assets/images/radio-hits.webp",
     "accent": "#ff7567",
     "accentSoft": "#ffafa5"
@@ -277,7 +277,7 @@
         button.setAttribute('aria-label', `${action} ${describeStation(item)}`);
         button.querySelector('.radio-control-icon').src = isPlaying || isLoading ? 'assets/ui-icons/pause.png' : 'assets/ui-icons/play.png';
       });
-      if (!station) status.textContent = 'Live radio · 320 kbps';
+      if (!station) status.textContent = 'Live radio';
       else if (state === 'unconfigured') status.textContent = `${station.genre} station is not configured.`;
       else if (state === 'loading') status.textContent = `Loading ${describeStation(station)}.`;
       else if (state === 'playing') status.textContent = `Playing ${describeStation(station)}.`;

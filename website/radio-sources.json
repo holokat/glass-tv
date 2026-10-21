@@ -1,6 +1,6 @@
 {
   "verified_at": "2026-10-21T04:01:00Z",
-  "selection_rule": "Only credential-free, public HTTPS MP3 streams measured at 320 kbps were retained. The stream URLs are stable broadcaster-published URLs; do not persist any delivery redirects.",
+  "selection_rule": "Use credential-free public HTTPS streams with verified station identity and measured bitrate. US Top 40 uses the broadcaster-published 128 kbps MP3 stream; EDM and Classical remain 320 kbps. Do not persist delivery redirects.",
   "probe_method": {
     "http": "curl --location with the platform certificate store, 8 second timeout, and a 64 KiB response cap",
     "media": "ffprobe -rw_timeout 8000000 -read_intervals %+#1",
@@ -24,7 +24,11 @@
         "url_resolved": "https://stream1.rcast.net/72921",
         "codec": "MP3",
         "bitrate_kbps": 320,
-        "tags": ["deep house", "nu disco", "vocal house"],
+        "tags": [
+          "deep house",
+          "nu disco",
+          "vocal house"
+        ],
         "lastcheckok": 1,
         "lastchecktime": "2026-10-17 18:20:50"
       },
@@ -56,7 +60,12 @@
         "url_resolved": "https://mr-stream.connectmedia.hu/4741/mr3.mp3",
         "codec": "MP3",
         "bitrate_kbps": 320,
-        "tags": ["classical music", "cultural", "music", "public radio"],
+        "tags": [
+          "classical music",
+          "cultural",
+          "music",
+          "public radio"
+        ],
         "lastcheckok": 1,
         "lastchecktime": "2026-10-17 08:16:04"
       },
@@ -74,33 +83,26 @@
     },
     {
       "slot": "top_hits",
-      "station_name": "Radio Vacanța Fresh",
-      "homepage_url": "https://www.radiovacanta.ro/live-radio-vacanta-fresh",
-      "stream_url": "https://stream4.srr.ro:8443/fresh_rv",
+      "verified_at": "2026-10-21T04:33:06.694229+00:00",
+      "station_name": "181.FM Power 181",
+      "homepage_url": "https://player.181fm.com/?station=181-power",
+      "stream_url": "https://listen.181fm.com/181-power_128k.mp3",
       "official_source_evidence": {
-        "page": "https://www.radiovacanta.ro/live-radio-vacanta-fresh",
-        "fact": "The broadcaster's page describes Radio Vacanța Fresh as the place for today's hits and contains an HTML audio source with this exact HTTPS stream URL."
+        "page": "https://www.181.fm/legacy.html",
+        "fact": "Power 181 (Top 40) publishes a 128 kbps MP3 and a 64 kbps AAC stream. The selected HTTPS MP3 endpoint was measured at 128 kbps."
       },
       "radio_browser": {
-        "stationuuid": "c711c527-99a4-44d6-b277-22cff4c90e96",
-        "api_url": "https://de1.api.radio-browser.info/json/stations/byuuid/c711c527-99a4-44d6-b277-22cff4c90e96",
-        "name": "Radio Vacanța - Fresh",
-        "url_resolved": "https://stream4.srr.ro:8443/fresh_rv",
-        "codec": "MP3",
-        "bitrate_kbps": 320,
-        "tags": ["fresh", "hits", "pop", "top40"],
-        "lastcheckok": 1,
-        "lastchecktime": "2026-10-17 18:35:11"
+        "stationuuid": "9612358a-0601-11e8-ae97-52543be04c81",
+        "api_url": "https://de1.api.radio-browser.info/json/stations/byuuid/9612358a-0601-11e8-ae97-52543be04c81",
+        "name": "181.FM - Power 181 (Top 40)",
+        "country": "The United States Of America",
+        "bitrate_kbps": 128
       },
       "probe_result": {
-        "http_content_type": "audio/mpeg",
-        "icy_bitrate_kbps": 320,
+        "method": "ffprobe -rw_timeout 10000000 -read_intervals %+#1",
         "ffprobe_codec": "mp3",
         "ffprobe_sample_rate_hz": 44100,
-        "ffprobe_bitrate_bps": 320000,
-        "cors_allow_origin": "*",
-        "certificate_target": "stream4.srr.ro:8443",
-        "certificate_verify": "0 (ok)"
+        "ffprobe_bitrate_bps": 128000
       }
     }
   ],
