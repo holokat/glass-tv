@@ -1,6 +1,48 @@
 (() => {
   const screen = document.querySelector('[data-screen]');
   const row = screen.querySelector('.app-row');
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const video = screen.querySelector('[data-hero-video]');
+  const motionButton = document.querySelector('[data-hero-motion]');
+  let reefSelected = true;
+  let motionPaused = false;
+  let motionFailed = false;
+  let heroVisible = screen.getBoundingClientRect().top < innerHeight;
+  const canAnimate = () => reefSelected && !reducedMotion.matches && !motionFailed;
+  const shouldPlay = () => canAnimate() && !motionPaused && heroVisible && !document.hidden;
+  const updateMotion = () => {
+    motionButton.hidden = !canAnimate();
+    const label = motionPaused ? 'Play background animation' : 'Pause background animation';
+    motionButton.setAttribute('aria-label', label);
+    motionButton.title = label;
+    motionButton.querySelector('img').src = motionPaused ? 'assets/ui-icons/play.png' : 'assets/ui-icons/pause.png';
+    if (!canAnimate()) screen.classList.remove('motion-ready');
+    if (!shouldPlay()) { video.pause(); return; }
+    if (!video.hasAttribute('src')) video.src = video.dataset.src;
+    video.play().catch(() => {
+      // An interrupted play request is expected when scrolling away or switching wallpaper.
+      if (shouldPlay()) {
+        motionPaused = true;
+        updateMotion();
+      }
+    });
+  };
+  video.addEventListener('playing', () => {
+    if (shouldPlay()) screen.classList.add('motion-ready');
+    else video.pause();
+  });
+  video.addEventListener('error', () => { motionFailed = true; updateMotion(); });
+  motionButton.addEventListener('click', () => { motionPaused = !motionPaused; updateMotion(); });
+  document.addEventListener('visibilitychange', updateMotion);
+  reducedMotion.addEventListener('change', updateMotion);
+  if ('IntersectionObserver' in window) {
+    const videoObserver = new IntersectionObserver(entries => {
+      heroVisible = entries[0].isIntersecting;
+      updateMotion();
+    });
+    videoObserver.observe(screen);
+  }
+  updateMotion();
   const setPressed = (buttons, current) => buttons.forEach(button => {
     button.classList.toggle('active', button === current);
     button.setAttribute('aria-pressed', String(button === current));
@@ -16,6 +58,8 @@
   const wallpapers = [...document.querySelectorAll('[data-wallpaper]')];
   wallpapers.forEach(button => button.addEventListener('click', () => {
     const reef = button.dataset.wallpaper === 'reef';
+    reefSelected = reef;
+    updateMotion();
     const image = screen.querySelector('.wallpaper');
     image.src = reef ? 'assets/images/oled-reef.png' : 'assets/images/coastal-sunset.png';
     image.alt = reef ? 'Vivid teal anemones and orange coral in deep blue water' : 'Coastal mountains at sunset';
@@ -47,7 +91,6 @@
   // Cover every section's content, including controls and captions, without
   // hiding an entire tall section before its lower content reaches the screen.
   const revealTargets = [...document.querySelectorAll('main > section > *, footer')];
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let observer;
   const reveal = element => {
     element.classList.remove('will-reveal');

@@ -5,3 +5,13 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}.will-reveal{opacity:1;transform:none}}
 /* Keep every minimal service mark white, including multicolor source SVGs. */
 .tv-screen:not(.cards) .app-tile img,.mini-apps img{filter:brightness(0) invert(1)}
+
+/* The animated reef is a background layer; launcher UI and TV hardware stay in the DOM. */
+.reef-motion{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;transition:opacity .4s var(--ease)}
+.motion-ready .reef-motion{opacity:1}
+.hero-motion{width:44px;height:44px;flex-shrink:0;border-radius:50%;background:#232325;display:grid;place-items:center}
+.hero-motion:hover{background:#353538}
+.hero-motion .icon{width:19px;height:19px}
+.hero-motion[hidden]{display:none}
+.preview-toolbar{flex-wrap:wrap}
+@media(prefers-reduced-motion:reduce){.reef-motion{display:none}}

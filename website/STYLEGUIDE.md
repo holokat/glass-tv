@@ -6,7 +6,7 @@ The product is the hero. Use a centered Glass TV title, a concise Android TV lau
 
 The owner requested Apple's product-page aesthetic. [Apple Studio Display](https://www.apple.com/studio-display/) informs the centered title, full-scale display imagery and deliberate vertical rhythm. [Apple TV 4K](https://www.apple.com/apple-tv-4k/) informs the large launcher demonstration and product-feature sequence. Supahero now redirects to [ScreensDesign](https://screensdesign.com/), which was consulted; it no longer offers the previous public hero gallery. [Dark.design](https://www.dark.design/) was consulted for dark composition, and [60fps](https://60fps.design/) for restrained state transitions. [Footer.design](https://www.footer.design/) informs the quiet, compact closing navigation. Retain native system typography from the product, as requested by the Apple aesthetic; do not add a webfont dependency.
 
-Follow the owner's web-design-rules: no eyebrow text, decorative filler, all-cap titles, shadows, or bordered marketing-card grids. Color comes from content. No purple interface accent. Shader Effects was consulted: a shader would compete with the OLED-style product artwork, so use the complete static image with DOM UI and CSS motion.
+Follow the owner's web-design-rules: no eyebrow text, decorative filler, all-cap titles, shadows, or bordered marketing-card grids. Color comes from content. No purple interface accent. Shader Effects was consulted: a shader would compete with the OLED-style product artwork, so use the reef video with a still-image fallback, DOM UI and CSS motion.
 
 ## Tokens
 
@@ -39,3 +39,7 @@ Public source and downloads: https://github.com/holokat/glass-tv. Production sit
 ## Platform wording
 
 Identify Glass TV as a custom, open source Android TV launcher in the hero. The Android build requires API 26 (Android 8.0) or later; state that requirement near the TV release note rather than promising compatibility with every device. Mark the Linux companion as Coming soon in the companion and download sections. Keep the current Mac download and requirements clear.
+
+## Hero background video
+
+The owner-approved Grok clip, generated through Cloudflare from `oled-reef.png`, is served as `assets/video/reef-motion.mp4`. It is a silent 6.04-second H.264 clip at 1264×720, compressed for the website without changing the motion. Keep the TV frame, launcher controls and weather separate above it. Loop only the reef selection, with a Central pause/play control beside the preview options. Load video only when visible and motion is allowed; pause offscreen or in a hidden tab. Reduced motion, load failure and JavaScript failure retain the still wallpaper. Coastal wallpaper remains static.
