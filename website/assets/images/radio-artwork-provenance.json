@@ -1,0 +1,20 @@
+{
+  "created": "2026-10-21",
+  "purpose": "Genre artwork for the homepage radio listening previews. Generated illustrations, not official station logos.",
+  "generator": "Built-in image generation",
+  "assets": [
+    {
+      "file": "radio-edm.webp",
+      "description": "Chrome loop with cyan and orange lighting on black, electronic music genre artwork."
+    },
+    {
+      "file": "radio-classical.webp",
+      "description": "Photorealistic cello macro in warm amber and gold, classical music genre artwork."
+    },
+    {
+      "file": "radio-hits.webp",
+      "description": "Translucent ruby and coral glass ribbons on black, pop music genre artwork."
+    }
+  ],
+  "delivery": "960 \u00d7 960 WebP, quality 86; square originals retained in work/homepage-radio/artwork. Display with circular CSS crop."
+}

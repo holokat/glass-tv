@@ -1,0 +1,111 @@
+{
+  "verified_at": "2026-10-21T04:01:00Z",
+  "selection_rule": "Only credential-free, public HTTPS MP3 streams measured at 320 kbps were retained. The stream URLs are stable broadcaster-published URLs; do not persist any delivery redirects.",
+  "probe_method": {
+    "http": "curl --location with the platform certificate store, 8 second timeout, and a 64 KiB response cap",
+    "media": "ffprobe -rw_timeout 8000000 -read_intervals %+#1",
+    "certificate": "openssl s_client -verify_return_error -verify_hostname against the stream host and port"
+  },
+  "stations": [
+    {
+      "slot": "edm",
+      "station_name": "Extreme Deep House Radio",
+      "homepage_url": "https://www.extremedeephouse.com/",
+      "stream_url": "https://stream1.rcast.net/72921",
+      "official_source_evidence": {
+        "page": "https://www.extremedeephouse.com/",
+        "published_stream_list": "https://www.extremedeephouse.com/_files/ugd/99d90b_8f25737f5f174b7a9a4b3eefde7776b6.txt?dn=Streams.txt",
+        "fact": "The broadcaster's Stream 1 list explicitly publishes https://stream1.rcast.net/72921 as an SSL MP3 320 kbps stream."
+      },
+      "radio_browser": {
+        "stationuuid": "105e5e91-67bd-4638-80d5-004124e50cce",
+        "api_url": "https://de1.api.radio-browser.info/json/stations/byuuid/105e5e91-67bd-4638-80d5-004124e50cce",
+        "name": "Extreme Deep House Radio",
+        "url_resolved": "https://stream1.rcast.net/72921",
+        "codec": "MP3",
+        "bitrate_kbps": 320,
+        "tags": ["deep house", "nu disco", "vocal house"],
+        "lastcheckok": 1,
+        "lastchecktime": "2026-10-17 18:20:50"
+      },
+      "probe_result": {
+        "http_content_type": "audio/mpeg",
+        "icy_name": "Extreme Deep House Radio",
+        "icy_bitrate_kbps": 320,
+        "ffprobe_codec": "mp3",
+        "ffprobe_sample_rate_hz": 48000,
+        "ffprobe_bitrate_bps": 320000,
+        "cors_allow_origin": "*",
+        "certificate_target": "stream1.rcast.net:443",
+        "certificate_verify": "0 (ok)"
+      }
+    },
+    {
+      "slot": "classical",
+      "station_name": "MR3 - Bartók Rádió",
+      "homepage_url": "https://mediaklikk.hu/bartok/",
+      "stream_url": "https://mr-stream.connectmedia.hu/4741/mr3.mp3",
+      "official_source_evidence": {
+        "page": "https://mediaklikk.hu/bartok/",
+        "fact": "The broadcaster's live-player configuration sets primary_live_url to https://mr-stream.connectmedia.hu/4741/mr3.mp3."
+      },
+      "radio_browser": {
+        "stationuuid": "08e90601-b7eb-4b41-a892-b897775286c8",
+        "api_url": "https://de1.api.radio-browser.info/json/stations/byuuid/08e90601-b7eb-4b41-a892-b897775286c8",
+        "name": "MR3 - Bartók Rádió",
+        "url_resolved": "https://mr-stream.connectmedia.hu/4741/mr3.mp3",
+        "codec": "MP3",
+        "bitrate_kbps": 320,
+        "tags": ["classical music", "cultural", "music", "public radio"],
+        "lastcheckok": 1,
+        "lastchecktime": "2026-10-17 08:16:04"
+      },
+      "probe_result": {
+        "http_content_type": "audio/mpeg",
+        "icy_name": "Bartok Radio",
+        "icy_bitrate_kbps": 320,
+        "ffprobe_codec": "mp3",
+        "ffprobe_sample_rate_hz": 44100,
+        "ffprobe_bitrate_bps": 320000,
+        "cors_allow_origin": "*",
+        "certificate_target": "mr-stream.connectmedia.hu:443",
+        "certificate_verify": "0 (ok)"
+      }
+    },
+    {
+      "slot": "top_hits",
+      "station_name": "Radio Vacanța Fresh",
+      "homepage_url": "https://www.radiovacanta.ro/live-radio-vacanta-fresh",
+      "stream_url": "https://stream4.srr.ro:8443/fresh_rv",
+      "official_source_evidence": {
+        "page": "https://www.radiovacanta.ro/live-radio-vacanta-fresh",
+        "fact": "The broadcaster's page describes Radio Vacanța Fresh as the place for today's hits and contains an HTML audio source with this exact HTTPS stream URL."
+      },
+      "radio_browser": {
+        "stationuuid": "c711c527-99a4-44d6-b277-22cff4c90e96",
+        "api_url": "https://de1.api.radio-browser.info/json/stations/byuuid/c711c527-99a4-44d6-b277-22cff4c90e96",
+        "name": "Radio Vacanța - Fresh",
+        "url_resolved": "https://stream4.srr.ro:8443/fresh_rv",
+        "codec": "MP3",
+        "bitrate_kbps": 320,
+        "tags": ["fresh", "hits", "pop", "top40"],
+        "lastcheckok": 1,
+        "lastchecktime": "2026-10-17 18:35:11"
+      },
+      "probe_result": {
+        "http_content_type": "audio/mpeg",
+        "icy_bitrate_kbps": 320,
+        "ffprobe_codec": "mp3",
+        "ffprobe_sample_rate_hz": 44100,
+        "ffprobe_bitrate_bps": 320000,
+        "cors_allow_origin": "*",
+        "certificate_target": "stream4.srr.ro:8443",
+        "certificate_verify": "0 (ok)"
+      }
+    }
+  ],
+  "limitations": [
+    "The technical checks show unauthenticated browser-oriented access at verification time. They do not grant redistribution rights; use direct playback only and do not proxy or rebroadcast.",
+    "Live station availability and playlists can change."
+  ]
+}
