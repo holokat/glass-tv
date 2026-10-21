@@ -1,8 +1,8 @@
 # AppImage preview recipe
 
 This is a reproducible build path for the **discovery-only preview**. It
-contains the certificate-discovery window, its approved reef preview and the
-Central refresh icon. It has no pairing, credential persistence, authenticated
+contains the certificate-discovery window and its approved reef preview. A
+licensed Central refresh icon is included when available locally. It has no pairing, credential persistence, authenticated
 receiver requests, media, settings synchronization or Android packaging.
 
 The first target is x86_64 Ubuntu 24.04. Its glibc 2.39 meets the
@@ -61,8 +61,8 @@ is a conforming AppDir with one root desktop entry, `AppRun`, a root icon and
 `.DirIcon`; the launcher sets `GLASS_TV_RESOURCE_ROOT` so the frozen executable
 does not look back into the source checkout.
 
-Run `packaging/check-appimage-layout.sh` for a network-free recipe check. CI
-also runs the artifact using `APPIMAGE_EXTRACT_AND_RUN=1`, which exercises the
+Run `packaging/check-appimage-layout.sh` for a network-free recipe check. The inactive reference workflow
+is configured to run the artifact using `APPIMAGE_EXTRACT_AND_RUN=1`, which exercises the
 runtime's extraction path where FUSE is unavailable. A real desktop-session
 test remains necessary before claiming native desktop, accessibility, X11 or
 Wayland support.
