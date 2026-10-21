@@ -1,0 +1,62 @@
+[
+  {
+    "id": "big-buck-bunny",
+    "file": "big-buck-bunny.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Big_buck_bunny_poster_big.jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c5/Big_buck_bunny_poster_big.jpg/500px-Big_buck_bunny_poster_big.jpg",
+    "artist": "(c) copyright Blender Foundation | peach.blender.org",
+    "attribution": "(c) copyright Blender Foundation | www.bigbuckbunny.org",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0"
+  },
+  {
+    "id": "elephants-dream",
+    "file": "elephants-dream.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:ElephantsDreamPoster.jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0c/ElephantsDreamPoster.jpg/500px-ElephantsDreamPoster.jpg",
+    "artist": "Bassam Kurdali, Andy Goralczyk, and the Blender Foundation",
+    "attribution": "",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0"
+  },
+  {
+    "id": "sintel",
+    "file": "sintel.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Sintel_poster.jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/Sintel_poster.jpg/500px-Sintel_poster.jpg",
+    "artist": "(c) copyright Blender Foundation | durian.blender.org",
+    "attribution": "© copyright Blender Foundation – durian.blender.org",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0"
+  },
+  {
+    "id": "spring",
+    "file": "spring.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Spring2019PillarPosterBlender.jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/05/Spring2019PillarPosterBlender.jpg/500px-Spring2019PillarPosterBlender.jpg",
+    "artist": "Francesco Siddi",
+    "attribution": "Blender Cloud",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0"
+  },
+  {
+    "id": "tears-of-steel",
+    "file": "tears-of-steel.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Tos-poster.png",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/70/Tos-poster.png/500px-Tos-poster.png",
+    "artist": "(CC) Blender Foundation | Project Mango",
+    "attribution": "",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0"
+  },
+  {
+    "id": "cosmos-laundromat",
+    "file": "cosmos-laundromat.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:CosmosLaundromatPoster.jpg",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c5/CosmosLaundromatPoster.jpg/500px-CosmosLaundromatPoster.jpg",
+    "artist": "Andy Goralczyk and the Blender Foundation",
+    "attribution": "CC-BY 2015, Blender Foundation, cloud.blender.org",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0"
+  }
+]
