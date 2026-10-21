@@ -1,0 +1,18 @@
+{
+  "generator": "xai/grok-imagine-video through Cloudflare AI Gateway",
+  "created": "2026-10-21",
+  "duration_seconds": 6,
+  "delivery": "Silent H.264 MP4, original generated resolution 1264 x 720, CRF 21, faststart. Text and controls are separate HTML.",
+  "assets": [
+    {
+      "file": "london-hover.mp4",
+      "source": "assets/images/london-01.jpg",
+      "direction": "Very slow subtle zoom toward Tower Bridge, stable sunset architecture."
+    },
+    {
+      "file": "tokyo-hover.mp4",
+      "source": "assets/images/tokyo-01.jpg",
+      "direction": "Subtle uniform zoom of the existing skyline; preserve exactly one Tokyo Tower. Refined generation selected after rejecting a duplicate-tower artifact."
+    }
+  ]
+}

@@ -53,3 +53,8 @@ The owner-approved Grok clip, generated through Cloudflare from `oled-reef.png`,
 ## Homepage radio
 
 Three circular 232 px genre artwork controls: EDM (cyan), Classical (gold), Top hits (coral). Generated images are genre artwork, not station logos; provenance is recorded in `assets/images/radio-artwork-provenance.json`. Provider names link directly to official station pages beneath each control. Public direct HTTPS MP3 streams are verified at 320 kbps in `radio-sources.json`. No autoplay, proxy, or recorded radio excerpts. One audio element plays at a time; active station ring and waveform use its artwork accent. Waveform motion is decorative playback feedback, not a measured spectrum. Only actual playback animates it; loading, pause, and errors stop it. Respect reduced motion. Keep hover scale restrained, native buttons keyboard accessible, and errors retryable.
+
+
+## Weather hover motion
+
+Scenic London and Tokyo cards layer separate silent Grok videos over their existing photos, below the gradient and live weather typography. `weather-motion.js` plays a six-second subtle zoom on pointer hover or keyboard focus, fades video opacity over 450 ms, holds its final frame, then fades back and resets after exit. There are no native video controls or automatic loops. Use `object-fit: cover` with the same 60% London and 75% Tokyo positioning as the stills. Pause offscreen, in hidden tabs, and when switching to Minimal or Icon & temperature. Reduced motion keeps the static photos; coarse-pointer devices do not preload or play from touch hover. Only visible cards warm their video sources on hover-capable devices; the static background remains the load/error fallback. No new dependencies.
