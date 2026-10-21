@@ -26,6 +26,6 @@ API 34 currently meets the [Android TV target API exception](https://developer.a
 
 ## Other distribution channels
 
-The signed APK can be hosted on a verified project release page after release approval. This local kit has not been uploaded and deliberately includes no invented release download URL. Review [Android developer verification](https://developer.android.com/developer-verification/guides/google-play-console) for distribution outside Play.
+The signed APK is published as an [Android testing prerelease](https://github.com/holokat/glass-tv/releases/tag/android-v1.0.0-rc.1), with checksums and agent installation instructions. The AAB has not been uploaded to Google Play. Review [Android developer verification](https://developer.android.com/developer-verification/guides/google-play-console) for distribution outside Play.
 
 F-Droid inclusion is a separate process. A public, reproducible source build and compatible licenses for all included components are required. The current private licensed icon dependency needs resolution; choosing MIT for owned code alone does not make this build F-Droid eligible. See the [F-Droid inclusion policy](https://f-droid.org/docs/Inclusion_Policy/).

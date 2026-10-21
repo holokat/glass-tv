@@ -2,7 +2,7 @@
 
 Package ID: `xyz.glasstv.launcher` • Version code: `1` • Android TV 8.0 or later
 
-This folder is a local distribution kit. Nothing in it has been uploaded to Google Play or a public APK repository.
+The APK and installation kit are published as an [Android testing prerelease](https://github.com/holokat/glass-tv/releases/tag/android-v1.0.0-rc.1). The AAB remains local and has not been submitted to Google Play.
 
 | File | Purpose |
 | --- | --- |
