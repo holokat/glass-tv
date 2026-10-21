@@ -127,3 +127,44 @@
     }
   }
 })();
+
+// Move only the image clipped inside the shared footer wordmark.
+(() => {
+  const footer = document.querySelector('.site-footer');
+  const wordmark = footer?.querySelector('.footer-wordmark');
+  if (!wordmark) return;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const hover = matchMedia('(any-hover: hover)');
+  let frame = 0;
+  let pointer = null;
+  const reset = () => {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    pointer = null;
+    footer.classList.remove('is-tracking');
+    wordmark.style.removeProperty('--reef-x');
+    wordmark.style.removeProperty('--reef-y');
+  };
+  footer.addEventListener('pointermove', event => {
+    if (event.pointerType === 'touch' || reduced.matches || !hover.matches || document.hidden) return;
+    pointer = {x: event.clientX, y: event.clientY};
+    if (frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      if (!pointer) return;
+      const rect = footer.getBoundingClientRect();
+      const clamp = value => Math.max(-1, Math.min(1, value));
+      const x = clamp((pointer.x - rect.left) / rect.width * 2 - 1);
+      const y = clamp((pointer.y - rect.top) / rect.height * 2 - 1);
+      footer.classList.add('is-tracking');
+      wordmark.style.setProperty('--reef-x', `${(x * 32).toFixed(2)}px`);
+      wordmark.style.setProperty('--reef-y', `${(y * 22).toFixed(2)}px`);
+    });
+  });
+  footer.addEventListener('pointerleave', reset);
+  footer.addEventListener('pointercancel', reset);
+  reduced.addEventListener('change', reset);
+  hover.addEventListener('change', reset);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) reset(); });
+  window.addEventListener('pagehide', reset);
+})();
